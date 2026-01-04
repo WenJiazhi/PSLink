@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import 'package:pslink/l10n/app_localizations.dart';
+import 'package:pslink/l10n/language_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,38 +23,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final languageProvider = context.watch<LanguageProvider>();
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0D1B2A),
-              Color(0xFF1B263B),
+              Color(0xFF0A0E21),
+              Color(0xFF1A1F38),
               Color(0xFF0D1B2A),
             ],
+            stops: [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              _buildAppBar(),
+              _buildAppBar(l10n),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   children: [
                     _buildSection(
-                      'Video',
+                      l10n.get('video'),
                       [
                         _buildSelectOption(
-                          'Resolution',
+                          l10n.get('resolution'),
                           _resolution,
                           ['720p', '1080p', '1440p', '4K'],
                           (value) => setState(() => _resolution = value),
+                          l10n,
                         ),
                         _buildSelectOption(
-                          'Frame Rate',
+                          l10n.get('frameRate'),
                           '$_frameRate FPS',
                           ['30 FPS', '60 FPS'],
                           (value) {
@@ -59,9 +67,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               _frameRate = value.replaceAll(' FPS', '');
                             });
                           },
+                          l10n,
                         ),
                         _buildSelectOption(
-                          'Video Codec',
+                          l10n.get('videoCodec'),
                           _codec,
                           ['H.264', 'HEVC (H.265)'],
                           (value) {
@@ -69,10 +78,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               _codec = value.contains('HEVC') ? 'HEVC' : 'H.264';
                             });
                           },
+                          l10n,
                         ),
                         _buildToggleOption(
-                          'HDR',
-                          'Enable HDR video output',
+                          l10n.get('hdr'),
+                          l10n.get('enableHdr'),
                           _useHDR,
                           (value) => setState(() => _useHDR = value),
                         ),
@@ -80,10 +90,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
                     _buildSection(
-                      'Network',
+                      l10n.get('network'),
                       [
                         _buildSliderOption(
-                          'Bitrate Limit',
+                          l10n.get('bitrateLimit'),
                           '${_bitrateLimit.toInt()} Mbps',
                           _bitrateLimit,
                           5,
@@ -94,11 +104,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
                     _buildSection(
-                      'Controller',
+                      l10n.get('controller'),
                       [
                         _buildToggleOption(
-                          'Haptic Feedback',
-                          'Enable vibration feedback',
+                          l10n.get('hapticFeedback'),
+                          l10n.get('enableVibration'),
                           _useHaptics,
                           (value) => setState(() => _useHaptics = value),
                         ),
@@ -106,11 +116,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
                     _buildSection(
-                      'Audio',
+                      l10n.get('audio'),
                       [
                         _buildToggleOption(
-                          'Microphone',
-                          'Enable voice chat',
+                          l10n.get('microphone'),
+                          l10n.get('enableVoiceChat'),
                           _useMicrophone,
                           (value) => setState(() => _useMicrophone = value),
                         ),
@@ -118,11 +128,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
                     _buildSection(
-                      'About',
+                      l10n.get('language'),
                       [
-                        _buildInfoOption('Version', '1.0.0'),
-                        _buildInfoOption('Developer', 'PSLink Team'),
-                        _buildInfoOption('Based on', 'Chiaki Open Source'),
+                        _buildLanguageOption(
+                          l10n.get('language'),
+                          languageProvider.locale.languageCode == 'zh'
+                              ? l10n.get('chinese')
+                              : l10n.get('english'),
+                          l10n,
+                          languageProvider,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSection(
+                      l10n.get('about'),
+                      [
+                        _buildInfoOption(l10n.get('version'), '1.0.1'),
+                        _buildInfoOption(l10n.get('developer'), 'PSLink Team'),
+                        _buildInfoOption(l10n.get('basedOn'), 'Chiaki Open Source'),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -136,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -144,23 +168,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
               ),
               child: const Icon(
                 CupertinoIcons.back,
                 color: Colors.white70,
+                size: 20,
               ),
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 20,
+              l10n.get('settings'),
+              style: const TextStyle(
+                fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -182,15 +210,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.5),
-              letterSpacing: 1.2,
+              color: const Color(0xFF0072CE).withValues(alpha: 0.8),
+              letterSpacing: 1.5,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.08),
+                Colors.white.withValues(alpha: 0.03),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.1),
             ),
@@ -206,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       padding: const EdgeInsets.only(left: 16),
                       child: Divider(
                         height: 1,
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
                     ),
                 ],
@@ -223,11 +258,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String value,
     List<String> options,
     Function(String) onChanged,
+    AppLocalizations l10n,
   ) {
     return GestureDetector(
-      onTap: () => _showOptionPicker(label, options, value, onChanged),
+      onTap: () => _showOptionPicker(label, options, value, onChanged, l10n),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -242,8 +278,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   value,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: Colors.white.withValues(alpha: 0.3),
+                  size: 16,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(
+    String label,
+    String value,
+    AppLocalizations l10n,
+    LanguageProvider languageProvider,
+  ) {
+    return GestureDetector(
+      onTap: () => _showLanguagePicker(l10n, languageProvider),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0072CE).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.globe,
+                    color: Color(0xFF0072CE),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  label,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 16,
                   ),
                 ),
@@ -268,7 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Function(bool) onChanged,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       child: Row(
         children: [
           Expanded(
@@ -286,7 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 12,
                   ),
                 ),
@@ -312,7 +408,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Function(double) onChanged,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -326,22 +422,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   fontSize: 16,
                 ),
               ),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0072CE).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF0072CE),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           SliderTheme(
             data: SliderThemeData(
               activeTrackColor: const Color(0xFF0072CE),
               inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
               thumbColor: Colors.white,
               overlayColor: const Color(0xFF0072CE).withValues(alpha: 0.2),
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
             ),
             child: Slider(
               value: currentValue,
@@ -357,7 +463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildInfoOption(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -370,8 +476,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 16,
             ),
           ),
@@ -385,19 +491,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     List<String> options,
     String currentValue,
     Function(String) onChanged,
+    AppLocalizations l10n,
   ) {
     showCupertinoModalPopup(
       context: context,
       builder: (context) => Container(
-        height: 250,
+        height: 280,
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1A1F38),
+              Color(0xFF0D1B2A),
+            ],
+          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -418,12 +532,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF0072CE),
-                        fontWeight: FontWeight.w500,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0072CE).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        l10n.get('done'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF0072CE),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -442,12 +566,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
+                        horizontal: 18,
+                        vertical: 16,
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFF0072CE).withValues(alpha: 0.1)
+                            ? const Color(0xFF0072CE).withValues(alpha: 0.15)
                             : null,
                       ),
                       child: Row(
@@ -459,16 +583,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: isSelected
-                                    ? FontWeight.w500
+                                    ? FontWeight.w600
                                     : FontWeight.normal,
                               ),
                             ),
                           ),
                           if (isSelected)
-                            const Icon(
-                              CupertinoIcons.checkmark,
-                              color: Color(0xFF0072CE),
-                              size: 20,
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0072CE),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                CupertinoIcons.checkmark,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             ),
                         ],
                       ),
@@ -477,6 +608,151 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }).toList(),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguagePicker(
+    AppLocalizations l10n,
+    LanguageProvider languageProvider,
+  ) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => Container(
+        height: 220,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1A1F38),
+              Color(0xFF0D1B2A),
+            ],
+          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.get('language'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0072CE).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        l10n.get('done'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF0072CE),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _buildLanguageItem(
+              'English',
+              '🇺🇸',
+              languageProvider.locale.languageCode == 'en',
+              () {
+                languageProvider.setLocale(const Locale('en'));
+                Navigator.pop(context);
+              },
+            ),
+            Divider(
+              height: 1,
+              color: Colors.white.withValues(alpha: 0.08),
+              indent: 18,
+            ),
+            _buildLanguageItem(
+              '中文',
+              '🇨🇳',
+              languageProvider.locale.languageCode == 'zh',
+              () {
+                languageProvider.setLocale(const Locale('zh'));
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageItem(
+    String label,
+    String flag,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF0072CE).withValues(alpha: 0.15)
+              : null,
+        ),
+        child: Row(
+          children: [
+            Text(
+              flag,
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (isSelected)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0072CE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  CupertinoIcons.checkmark,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
           ],
         ),
       ),

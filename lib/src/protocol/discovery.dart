@@ -62,20 +62,27 @@ class DiscoveryService {
     _isDiscovering = false;
   }
 
-  /// Send a discovery broadcast packet
+  /// Send discovery broadcast packets to both PS4 and PS5
   void _sendDiscoveryPacket(bool searchPS5) {
     if (_socket == null) return;
 
-    final port = searchPS5 ? PSConstants.discoveryPortPS5 : PSConstants.discoveryPortPS4;
-    final version = searchPS5 ? PSConstants.protocolVersionPS5 : PSConstants.protocolVersionPS4;
-
-    final packet = _buildSearchPacket(version);
+    // Always search for both PS4 and PS5
+    final ps4Packet = _buildSearchPacket(PSConstants.protocolVersionPS4);
+    final ps5Packet = _buildSearchPacket(PSConstants.protocolVersionPS5);
 
     try {
+      // Send PS4 discovery packet
       _socket!.send(
-        packet,
+        ps4Packet,
         InternetAddress('255.255.255.255'),
-        port,
+        PSConstants.discoveryPortPS4,
+      );
+
+      // Send PS5 discovery packet
+      _socket!.send(
+        ps5Packet,
+        InternetAddress('255.255.255.255'),
+        PSConstants.discoveryPortPS5,
       );
     } catch (e) {
       // Ignore send errors

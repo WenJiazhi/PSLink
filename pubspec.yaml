@@ -1,13 +1,16 @@
 name: pslink
 description: "PlayStation Remote Play client for iOS"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.6.0
 
 dependencies:
   flutter:
+    sdk: flutter
+
+  flutter_localizations:
     sdk: flutter
 
   cupertino_icons: ^1.0.8

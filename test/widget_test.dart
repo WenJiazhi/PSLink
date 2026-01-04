@@ -3,9 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pslink/src/ui/app_state.dart';
 import 'package:pslink/src/models/ps_host.dart';
 import 'package:pslink/src/protocol/discovery.dart';
+import 'package:pslink/l10n/app_localizations.dart';
+import 'package:pslink/l10n/language_provider.dart';
 
 // Simple mock AppState that doesn't use network
 class MockAppState extends ChangeNotifier implements AppState {
@@ -54,11 +57,22 @@ void main() {
   testWidgets('PSLink app smoke test', (WidgetTester tester) async {
     // Build app with mock state
     await tester.pumpWidget(
-      ChangeNotifierProvider<AppState>.value(
-        value: MockAppState(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppState>.value(value: MockAppState()),
+          ChangeNotifierProvider<LanguageProvider>(create: (_) => LanguageProvider()),
+        ],
         child: MaterialApp(
           title: 'PSLink',
           theme: AppTheme.darkTheme,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           home: const _SimpleHomeScreen(),
         ),
       ),
