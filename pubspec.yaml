@@ -1,0 +1,64 @@
+name: pslink
+description: "PlayStation Remote Play streaming client for iOS/Android"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  provider: ^6.1.2
+
+  # Network & UDP
+  udp: ^5.0.3
+
+  # Video/Audio streaming
+  flutter_vlc_player: ^7.4.2
+
+  # Storage
+  shared_preferences: ^2.3.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Crypto for RP-KEY
+  cryptography: ^2.7.0
+  pointycastle: ^3.9.1
+
+  # Network discovery
+  multicast_dns: ^0.3.2+6
+  network_info_plus: ^6.1.3
+
+  # UI Components
+  flutter_joystick: ^0.1.0
+  wakelock_plus: ^1.2.8
+
+  # Permissions
+  permission_handler: ^11.3.1
+
+  # Logging
+  logger: ^2.5.0
+
+  # URL launcher
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.13
+  mockito: ^5.4.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/
+    - assets/images/
