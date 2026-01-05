@@ -150,6 +150,7 @@ class DiscoveryService {
   /// Probe a specific IP address for PlayStation console
   Future<PSHost?> probeHost(String ipAddress) async {
     RawDatagramSocket? probeSocket;
+    StreamSubscription? probeSubscription;
 
     try {
       probeSocket = await RawDatagramSocket.bind(
@@ -161,7 +162,7 @@ class DiscoveryService {
       final completer = Completer<PSHost?>();
       Timer? timeout;
 
-      probeSocket.listen((event) {
+      probeSubscription = probeSocket.listen((event) {
         if (event == RawSocketEvent.read) {
           final datagram = probeSocket?.receive();
           if (datagram != null && !completer.isCompleted) {
@@ -199,8 +200,10 @@ class DiscoveryService {
 
       return await completer.future;
     } catch (e) {
+      debugPrint('Discovery: probeHost failed: $e');
       return null;
     } finally {
+      probeSubscription?.cancel();
       probeSocket?.close();
     }
   }
