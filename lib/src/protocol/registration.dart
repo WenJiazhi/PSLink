@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 import '../models/ps_host.dart';
 import 'constants.dart';
+import 'ps5_regist_crypto.dart';
 
 /// Registration result
 class RegistrationResult {
@@ -193,6 +194,7 @@ class RegistrationService {
   /// - RP-Version must be "2.0" (not 1.0 like PS4)
   /// - Uses Np-AccountId instead of RP-Auth
   /// - Connection: close is required
+  /// - Includes encrypted binary payload
   Uint8List _buildPS5RegistrationRequest({
     required PSHost host,
     required String pin,
@@ -202,22 +204,36 @@ class RegistrationService {
     // Validate and normalize PSN Account ID (should be Base64 encoded 8 bytes)
     String accountIdBase64 = _normalizeAccountId(psnAccountId);
 
-    // Build request with exact header format matching chiaki implementation
-    final buffer = StringBuffer();
-    buffer.write('POST ${PSConstants.registrationEndpointPS5} HTTP/1.1\r\n');
-    buffer.write('Host: ${host.hostAddress}:${PSConstants.registrationPort}\r\n');
-    buffer.write('User-Agent: remoteplay Windows\r\n'); // MUST match official client
-    buffer.write('Connection: close\r\n'); // Required by PS5
-    buffer.write('Content-Length: 0\r\n');
-    buffer.write('RP-Registkey: \r\n');
-    buffer.write('RP-Version: 2.0\r\n'); // PS5 uses 2.0, not 12.0
-    buffer.write('Np-AccountId: $accountIdBase64\r\n'); // PS5 uses Np-AccountId
-    buffer.write('RP-ClientType: 11\r\n'); // iOS client type
-    buffer.write('RP-PSN-ID: $psnOnlineId\r\n');
-    buffer.write('RP-Pin: $pin\r\n');
-    buffer.write('\r\n');
+    // Build the registration payload using PS5 crypto
+    final payload = PS5RegistCrypto.buildMinimalPayload(
+      psnAccountId: accountIdBase64,
+      psnOnlineId: psnOnlineId,
+      pin: pin,
+    );
 
-    return Uint8List.fromList(utf8.encode(buffer.toString()));
+    // Build HTTP headers
+    final headerBuffer = StringBuffer();
+    headerBuffer.write('POST ${PSConstants.registrationEndpointPS5} HTTP/1.1\r\n');
+    headerBuffer.write('Host: ${host.hostAddress}:${PSConstants.registrationPort}\r\n');
+    headerBuffer.write('User-Agent: remoteplay Windows\r\n');
+    headerBuffer.write('Connection: close\r\n');
+    headerBuffer.write('Content-Length: ${payload.length}\r\n');
+    headerBuffer.write('Content-Type: application/x-www-form-urlencoded\r\n');
+    headerBuffer.write('RP-Registkey: \r\n');
+    headerBuffer.write('RP-Version: 2.0\r\n');
+    headerBuffer.write('Np-AccountId: $accountIdBase64\r\n');
+    headerBuffer.write('RP-ClientType: 11\r\n');
+    headerBuffer.write('RP-PSN-ID: $psnOnlineId\r\n');
+    headerBuffer.write('RP-Pin: $pin\r\n');
+    headerBuffer.write('\r\n');
+
+    // Combine headers and payload
+    final headerBytes = utf8.encode(headerBuffer.toString());
+    final request = Uint8List(headerBytes.length + payload.length);
+    request.setRange(0, headerBytes.length, headerBytes);
+    request.setRange(headerBytes.length, request.length, payload);
+
+    return request;
   }
 
   /// Normalize PSN Account ID to valid Base64 format
