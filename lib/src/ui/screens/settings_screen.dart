@@ -27,134 +27,120 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final languageProvider = context.watch<LanguageProvider>();
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0A0E21),
-              Color(0xFF1A1F38),
-              Color(0xFF0D1B2A),
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(l10n),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    _buildSection(
-                      l10n.get('video'),
-                      [
-                        _buildSelectOption(
-                          l10n.get('resolution'),
-                          _resolution,
-                          ['720p', '1080p', '1440p', '4K'],
-                          (value) => setState(() => _resolution = value),
-                          l10n,
-                        ),
-                        _buildSelectOption(
-                          l10n.get('frameRate'),
-                          '$_frameRate FPS',
-                          ['30 FPS', '60 FPS'],
-                          (value) {
-                            setState(() {
-                              _frameRate = value.replaceAll(' FPS', '');
-                            });
-                          },
-                          l10n,
-                        ),
-                        _buildSelectOption(
-                          l10n.get('videoCodec'),
-                          _codec,
-                          ['H.264', 'HEVC (H.265)'],
-                          (value) {
-                            setState(() {
-                              _codec = value.contains('HEVC') ? 'HEVC' : 'H.264';
-                            });
-                          },
-                          l10n,
-                        ),
-                        _buildToggleOption(
-                          l10n.get('hdr'),
-                          l10n.get('enableHdr'),
-                          _useHDR,
-                          (value) => setState(() => _useHDR = value),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      l10n.get('network'),
-                      [
-                        _buildSliderOption(
-                          l10n.get('bitrateLimit'),
-                          '${_bitrateLimit.toInt()} Mbps',
-                          _bitrateLimit,
-                          5,
-                          50,
-                          (value) => setState(() => _bitrateLimit = value),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      l10n.get('controller'),
-                      [
-                        _buildToggleOption(
-                          l10n.get('hapticFeedback'),
-                          l10n.get('enableVibration'),
-                          _useHaptics,
-                          (value) => setState(() => _useHaptics = value),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      l10n.get('audio'),
-                      [
-                        _buildToggleOption(
-                          l10n.get('microphone'),
-                          l10n.get('enableVoiceChat'),
-                          _useMicrophone,
-                          (value) => setState(() => _useMicrophone = value),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      l10n.get('language'),
-                      [
-                        _buildLanguageOption(
-                          l10n.get('language'),
-                          languageProvider.locale.languageCode == 'zh'
-                              ? l10n.get('chinese')
-                              : l10n.get('english'),
-                          l10n,
-                          languageProvider,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSection(
-                      l10n.get('about'),
-                      [
-                        _buildInfoOption(l10n.get('version'), '1.0.1'),
-                        _buildInfoOption(l10n.get('developer'), 'PSLink Team'),
-                        _buildInfoOption(l10n.get('basedOn'), 'Chiaki Open Source'),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildAppBar(l10n),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                children: [
+                  _buildSection(
+                    l10n.get('video'),
+                    [
+                      _buildSelectOption(
+                        l10n.get('resolution'),
+                        _resolution,
+                        ['720p', '1080p', '1440p', '4K'],
+                        (value) => setState(() => _resolution = value),
+                        l10n,
+                      ),
+                      _buildSelectOption(
+                        l10n.get('frameRate'),
+                        '$_frameRate FPS',
+                        ['30 FPS', '60 FPS'],
+                        (value) {
+                          setState(() {
+                            _frameRate = value.replaceAll(' FPS', '');
+                          });
+                        },
+                        l10n,
+                      ),
+                      _buildSelectOption(
+                        l10n.get('videoCodec'),
+                        _codec,
+                        ['H.264', 'HEVC (H.265)'],
+                        (value) {
+                          setState(() {
+                            _codec = value.contains('HEVC') ? 'HEVC' : 'H.264';
+                          });
+                        },
+                        l10n,
+                      ),
+                      _buildToggleOption(
+                        l10n.get('hdr'),
+                        l10n.get('enableHdr'),
+                        _useHDR,
+                        (value) => setState(() => _useHDR = value),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSection(
+                    l10n.get('network'),
+                    [
+                      _buildSliderOption(
+                        l10n.get('bitrateLimit'),
+                        '${_bitrateLimit.toInt()} Mbps',
+                        _bitrateLimit,
+                        5,
+                        50,
+                        (value) => setState(() => _bitrateLimit = value),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSection(
+                    l10n.get('controller'),
+                    [
+                      _buildToggleOption(
+                        l10n.get('hapticFeedback'),
+                        l10n.get('enableVibration'),
+                        _useHaptics,
+                        (value) => setState(() => _useHaptics = value),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSection(
+                    l10n.get('audio'),
+                    [
+                      _buildToggleOption(
+                        l10n.get('microphone'),
+                        l10n.get('enableVoiceChat'),
+                        _useMicrophone,
+                        (value) => setState(() => _useMicrophone = value),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSection(
+                    l10n.get('language'),
+                    [
+                      _buildLanguageOption(
+                        l10n.get('language'),
+                        languageProvider.locale.languageCode == 'zh'
+                            ? l10n.get('chinese')
+                            : l10n.get('english'),
+                        l10n,
+                        languageProvider,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSection(
+                    l10n.get('about'),
+                    [
+                      _buildInfoOption(l10n.get('version'), '1.0.2'),
+                      _buildInfoOption(l10n.get('developer'), 'PSLink Team'),
+                      _buildInfoOption(l10n.get('basedOn'), 'Chiaki Open Source'),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -162,36 +148,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildAppBar(AppLocalizations l10n) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.back,
-                color: Colors.white70,
+                color: Colors.grey[700],
                 size: 20,
               ),
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              l10n.get('settings'),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+          Text(
+            l10n.get('settings'),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
             ),
           ),
         ],
@@ -204,31 +193,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
           child: Text(
             title.toUpperCase(),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0072CE).withValues(alpha: 0.8),
-              letterSpacing: 1.5,
+              color: Colors.grey[500],
+              letterSpacing: 1,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.08),
-                Colors.white.withValues(alpha: 0.03),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: children.map((child) {
@@ -237,12 +223,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   child,
                   if (!isLast)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16),
-                      child: Divider(
-                        height: 1,
-                        color: Colors.white.withValues(alpha: 0.08),
-                      ),
+                    Divider(
+                      height: 1,
+                      indent: 16,
+                      endIndent: 16,
+                      color: Colors.grey[200],
                     ),
                 ],
               );
@@ -262,15 +247,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     return GestureDetector(
       onTap: () => _showOptionPicker(label, options, value, onChanged, l10n),
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               label,
               style: const TextStyle(
-                color: Colors.white,
+                color: Color(0xFF1A1A1A),
                 fontSize: 16,
               ),
             ),
@@ -279,14 +265,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   value,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Colors.grey[500],
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Icon(
                   CupertinoIcons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.grey[400],
                   size: 16,
                 ),
               ],
@@ -305,48 +291,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     return GestureDetector(
       onTap: () => _showLanguagePicker(l10n, languageProvider),
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.globe,
-                    color: Color(0xFF0072CE),
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF1A1A1A),
+                fontSize: 16,
+              ),
             ),
             Row(
               children: [
                 Text(
                   value,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Colors.grey[500],
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Icon(
                   CupertinoIcons.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.grey[400],
                   size: 16,
                 ),
               ],
@@ -364,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Function(bool) onChanged,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
@@ -374,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   label,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1A1A1A),
                     fontSize: 16,
                   ),
                 ),
@@ -382,8 +352,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -391,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           CupertinoSwitch(
             value: value,
-            activeTrackColor: const Color(0xFF0072CE),
+            activeTrackColor: const Color(0xFF1A1A1A),
             onChanged: onChanged,
           ),
         ],
@@ -408,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Function(double) onChanged,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -418,36 +388,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1A1A1A),
                   fontSize: 16,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   value,
-                  style: const TextStyle(
-                    color: Color(0xFF0072CE),
-                    fontSize: 14,
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: const Color(0xFF0072CE),
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-              thumbColor: Colors.white,
-              overlayColor: const Color(0xFF0072CE).withValues(alpha: 0.2),
+              activeTrackColor: const Color(0xFF1A1A1A),
+              inactiveTrackColor: Colors.grey[200],
+              thumbColor: const Color(0xFF1A1A1A),
+              overlayColor: Colors.grey.withValues(alpha: 0.1),
               trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
             ),
             child: Slider(
               value: currentValue,
@@ -463,21 +433,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildInfoOption(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1A1A1A),
               fontSize: 16,
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.grey[500],
               fontSize: 16,
             ),
           ),
@@ -496,27 +466,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup(
       context: context,
       builder: (context) => Container(
-        height: 280,
+        height: 260,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1F38),
-              Color(0xFF0D1B2A),
-            ],
-          ),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
+                  bottom: BorderSide(color: Colors.grey[200]!),
                 ),
               ),
               child: Row(
@@ -525,29 +486,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Color(0xFF1A1A1A),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.get('done'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF0072CE),
-                          fontWeight: FontWeight.w600,
-                        ),
+                    child: Text(
+                      l10n.get('done'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF1A1A1A),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -564,15 +515,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged(option);
                       Navigator.pop(context);
                     },
+                    behavior: HitTestBehavior.opaque,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 16,
+                        horizontal: 16,
+                        vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF0072CE).withValues(alpha: 0.15)
-                            : null,
+                        color: isSelected ? Colors.grey[100] : null,
                       ),
                       child: Row(
                         children: [
@@ -580,7 +530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             child: Text(
                               option,
                               style: TextStyle(
-                                color: Colors.white,
+                                color: const Color(0xFF1A1A1A),
                                 fontSize: 16,
                                 fontWeight: isSelected
                                     ? FontWeight.w600
@@ -589,17 +539,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           if (isSelected)
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF0072CE),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                CupertinoIcons.checkmark,
-                                color: Colors.white,
-                                size: 14,
-                              ),
+                            const Icon(
+                              CupertinoIcons.checkmark,
+                              color: Color(0xFF1A1A1A),
+                              size: 18,
                             ),
                         ],
                       ),
@@ -621,27 +564,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoModalPopup(
       context: context,
       builder: (context) => Container(
-        height: 220,
+        height: 200,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1F38),
-              Color(0xFF0D1B2A),
-            ],
-          ),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
+                  bottom: BorderSide(color: Colors.grey[200]!),
                 ),
               ),
               child: Row(
@@ -650,29 +584,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     l10n.get('language'),
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Color(0xFF1A1A1A),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.get('done'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF0072CE),
-                          fontWeight: FontWeight.w600,
-                        ),
+                    child: Text(
+                      l10n.get('done'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF1A1A1A),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -681,21 +605,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildLanguageItem(
               'English',
-              '🇺🇸',
               languageProvider.locale.languageCode == 'en',
               () {
                 languageProvider.setLocale(const Locale('en'));
                 Navigator.pop(context);
               },
             ),
-            Divider(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.08),
-              indent: 18,
-            ),
+            Divider(height: 1, indent: 16, endIndent: 16, color: Colors.grey[200]),
             _buildLanguageItem(
               '中文',
-              '🇨🇳',
               languageProvider.locale.languageCode == 'zh',
               () {
                 languageProvider.setLocale(const Locale('zh'));
@@ -710,48 +628,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildLanguageItem(
     String label,
-    String flag,
     bool isSelected,
     VoidCallback onTap,
   ) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF0072CE).withValues(alpha: 0.15)
-              : null,
+          color: isSelected ? Colors.grey[100] : null,
         ),
         child: Row(
           children: [
-            Text(
-              flag,
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF1A1A1A),
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),
             if (isSelected)
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0072CE),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  CupertinoIcons.checkmark,
-                  color: Colors.white,
-                  size: 14,
-                ),
+              const Icon(
+                CupertinoIcons.checkmark,
+                color: Color(0xFF1A1A1A),
+                size: 18,
               ),
           ],
         ),

@@ -36,6 +36,11 @@ class AppLocalizations {
       'ipAddressHint': 'IP Address (e.g., 192.168.1.100)',
       'cancel': 'Cancel',
       'add': 'Add',
+      'searchDevices': 'Search',
+      'searching': 'Searching...',
+      'invalidIpFormat': 'Invalid IP address format',
+      'noPlayStationAtAddress': 'No PlayStation found at this address',
+      'searchFailedPrefix': 'Search failed',
 
       // Discovery Screen
       'registrationRequired': 'Registration Required',
@@ -100,6 +105,16 @@ class AppLocalizations {
       'quality': 'Quality',
       'latency': 'Latency',
       'fps': 'FPS',
+      'authenticating': 'Authenticating...',
+      'startingStream': 'Starting stream...',
+      'disconnecting': 'Disconnecting...',
+      'disconnected': 'Disconnected',
+      'unknownError': 'Unknown error',
+      'videoStream': 'Video Stream',
+      'goBack': 'Go Back',
+      'endRemotePlaySession': 'End the Remote Play session?',
+      'streamSettings': 'Stream Settings',
+      'bitrateAuto': 'Auto (10 Mbps)',
 
       // Errors
       'connectionFailed': 'Connection failed',
@@ -124,6 +139,11 @@ class AppLocalizations {
       'ipAddressHint': 'IP 地址 (例如 192.168.1.100)',
       'cancel': '取消',
       'add': '添加',
+      'searchDevices': '搜索设备',
+      'searching': '搜索中...',
+      'invalidIpFormat': 'IP 地址格式无效',
+      'noPlayStationAtAddress': '未找到 PlayStation,请检查 IP 和网络设置',
+      'searchFailedPrefix': '搜索失败',
 
       // Discovery Screen
       'registrationRequired': '需要注册',
@@ -188,6 +208,16 @@ class AppLocalizations {
       'quality': '画质',
       'latency': '延迟',
       'fps': '帧率',
+      'authenticating': '正在验证...',
+      'startingStream': '正在启动串流...',
+      'disconnecting': '正在断开...',
+      'disconnected': '已断开',
+      'unknownError': '未知错误',
+      'videoStream': '视频流',
+      'goBack': '返回',
+      'endRemotePlaySession': '结束远程游玩会话？',
+      'streamSettings': '串流设置',
+      'bitrateAuto': '自动 (10 Mbps)',
 
       // Errors
       'connectionFailed': '连接失败',

@@ -14,33 +14,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  late AnimationController _logoController;
-  late AnimationController _pulseController;
-  late Animation<double> _logoAnimation;
-  late Animation<double> _pulseAnimation;
-
+class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _logoController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat();
-
-    _logoAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
-    );
-
-    _pulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
-    );
-
     // Start discovery on launch
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AppState>().startDiscovery();
@@ -48,141 +25,111 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   @override
-  void dispose() {
-    _logoController.dispose();
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0A0E21),
-              Color(0xFF1A1F38),
-              Color(0xFF0D1B2A),
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(child: _buildHostList()),
-              _buildBottomBar(),
-            ],
-          ),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(l10n),
+            Expanded(child: _buildHostList(l10n)),
+            _buildBottomBar(l10n),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    final l10n = AppLocalizations.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
+  Widget _buildHeader(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Animated Logo with glow effect
-          Stack(
-            alignment: Alignment.center,
+          Row(
             children: [
-              // Pulse ring effect
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Container(
-                    width: 120 + (_pulseAnimation.value * 30),
-                    height: 120 + (_pulseAnimation.value * 30),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF0072CE)
-                            .withValues(alpha: 0.5 * (1 - _pulseAnimation.value)),
-                        width: 2,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              // Logo
-              ScaleTransition(
-                scale: _logoAnimation,
-                child: Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF0072CE),
-                        Color(0xFF00246B),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0072CE).withValues(alpha: 0.5),
-                        blurRadius: 40,
-                        spreadRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'PS',
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
+              // Simple logo
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text(
+                    'PS',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Colors.white, Color(0xFF0072CE)],
-            ).createShader(bounds),
-            child: Text(
-              l10n.get('appName'),
-              style: const TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 4,
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.get('appName'),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  Text(
+                    l10n.get('appSubtitle'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l10n.get('appSubtitle'),
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.white.withValues(alpha: 0.6),
-              letterSpacing: 1,
-            ),
+              const Spacer(),
+              // Settings button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (_) => const SettingsScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    CupertinoIcons.settings,
+                    color: Colors.grey[700],
+                    size: 22,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHostList() {
-    final l10n = AppLocalizations.of(context);
-
+  Widget _buildHostList(AppLocalizations l10n) {
     return Consumer<AppState>(
       builder: (context, appState, _) {
         if (appState.hosts.isEmpty) {
@@ -190,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           itemCount: appState.hosts.length,
           itemBuilder: (context, index) {
             return _buildHostCard(appState.hosts[index], l10n);
@@ -202,98 +149,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildEmptyState(bool isDiscovering, AppLocalizations l10n) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (isDiscovering) ...[
-            // Custom animated searching indicator
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                ...List.generate(3, (index) {
-                  return AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (context, child) {
-                      final delay = index * 0.3;
-                      final value = ((_pulseController.value + delay) % 1.0);
-                      return Container(
-                        width: 60 + (value * 80),
-                        height: 60 + (value * 80),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF0072CE)
-                                .withValues(alpha: 0.6 * (1 - value)),
-                            width: 2,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.wifi,
-                    size: 28,
-                    color: Color(0xFF0072CE),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Text(
-              l10n.get('searchingPlayStation'),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.white70,
-              ),
-            ),
-          ] else ...[
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Container(
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  width: 2,
-                ),
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
                 CupertinoIcons.gamecontroller,
-                size: 48,
-                color: Colors.white.withValues(alpha: 0.3),
+                size: 36,
+                color: Colors.grey[400],
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             Text(
-              l10n.get('noPlayStationFound'),
+              isDiscovering
+                  ? l10n.get('searchingPlayStation')
+                  : l10n.get('noPlayStationFound'),
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Colors.white70,
+                color: Color(0xFF1A1A1A),
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               l10n.get('noPlayStationHint'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.5),
+                color: Colors.grey[600],
                 height: 1.5,
               ),
             ),
+            if (isDiscovering) ...[
+              const SizedBox(height: 24),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A1A1A)),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -305,104 +213,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => _onHostTap(host),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isOnline
-                ? [
-                    const Color(0xFF1A2845),
-                    const Color(0xFF0F172A),
-                  ]
-                : [
-                    const Color(0xFF252835),
-                    const Color(0xFF1A1D28),
-                  ],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isOnline
-                ? const Color(0xFF0072CE).withValues(alpha: 0.6)
-                : Colors.white.withValues(alpha: 0.08),
-            width: isOnline ? 2 : 1,
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            if (isOnline)
-              BoxShadow(
-                color: const Color(0xFF0072CE).withValues(alpha: 0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Console icon with status indicator
-            Stack(
-              children: [
-                Container(
-                  width: 65,
-                  height: 65,
-                  decoration: BoxDecoration(
-                    gradient: isOnline
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF0072CE), Color(0xFF00246B)],
-                          )
-                        : null,
-                    color: isOnline ? null : Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      host.isPS5
-                          ? CupertinoIcons.device_desktop
-                          : CupertinoIcons.game_controller,
-                      size: 30,
-                      color: isOnline ? Colors.white : Colors.white54,
-                    ),
-                  ),
+            // Console icon
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: isOnline
+                    ? const Color(0xFF1A1A1A)
+                    : Colors.grey[200],
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Icon(
+                  host.isPS5
+                      ? CupertinoIcons.desktopcomputer
+                      : CupertinoIcons.gamecontroller,
+                  size: 24,
+                  color: isOnline ? Colors.white : Colors.grey[500],
                 ),
-                // Status dot
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isOnline
-                          ? const Color(0xFF4CAF50)
-                          : isStandby
-                              ? const Color(0xFFFF9800)
-                              : Colors.grey,
-                      border: Border.all(
-                        color: const Color(0xFF0F172A),
-                        width: 2,
-                      ),
-                      boxShadow: isOnline
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFF4CAF50).withValues(alpha: 0.6),
-                                blurRadius: 8,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(width: 18),
+            const SizedBox(width: 14),
 
             // Console info
             Expanded(
@@ -415,75 +261,51 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Text(
                           host.hostName,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: Color(0xFF1A1A1A),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                          horizontal: 8,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: host.isPS5
-                                ? [const Color(0xFF00246B), const Color(0xFF003791)]
-                                : [const Color(0xFF003791), const Color(0xFF0072CE)],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           host.isPS5 ? 'PS5' : 'PS4',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     host.hostAddress,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: Colors.grey[500],
                     ),
                   ),
                   if (host.runningAppName != null) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                    const SizedBox(height: 4),
+                    Text(
+                      host.runningAppName!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF4CAF50),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            CupertinoIcons.play_fill,
-                            size: 10,
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.8),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              host.runningAppName!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: const Color(0xFF4CAF50).withValues(alpha: 0.9),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -494,34 +316,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  isOnline
-                      ? l10n.get('online')
-                      : isStandby
-                          ? l10n.get('standby')
-                          : l10n.get('offline'),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: isOnline
-                        ? const Color(0xFF4CAF50)
-                        : isStandby
-                            ? const Color(0xFFFF9800)
-                            : Colors.grey,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isOnline
+                            ? const Color(0xFF4CAF50)
+                            : isStandby
+                                ? const Color(0xFFFF9800)
+                                : Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isOnline
+                          ? l10n.get('online')
+                          : isStandby
+                              ? l10n.get('standby')
+                              : l10n.get('offline'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    CupertinoIcons.chevron_right,
-                    color: Colors.white.withValues(alpha: 0.5),
-                    size: 16,
-                  ),
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: Colors.grey[400],
+                  size: 18,
                 ),
               ],
             ),
@@ -531,98 +360,100 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBottomBar() {
-    final l10n = AppLocalizations.of(context);
-
+  Widget _buildBottomBar(AppLocalizations l10n) {
     return Consumer<AppState>(
       builder: (context, appState, _) {
         return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.3),
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Row(
             children: [
               // Refresh button
-              _buildIconButton(
-                icon: appState.isDiscovering
-                    ? CupertinoIcons.stop_fill
-                    : CupertinoIcons.arrow_clockwise,
-                isActive: appState.isDiscovering,
-                onPressed: () {
-                  if (appState.isDiscovering) {
-                    appState.stopDiscovery();
-                  } else {
-                    appState.startDiscovery();
-                  }
-                },
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    if (appState.isDiscovering) {
+                      appState.stopDiscovery();
+                    } else {
+                      appState.startDiscovery();
+                    }
+                  },
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: appState.isDiscovering
+                          ? Colors.grey[300]
+                          : const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (appState.isDiscovering) ...[
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Color(0xFF1A1A1A)),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            l10n.get('searchingPlayStation').replaceAll('...', ''),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                        ] else ...[
+                          const Icon(
+                            CupertinoIcons.arrow_clockwise,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            l10n.get('searchDevices'),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
 
               // Manual add button
-              _buildIconButton(
-                icon: CupertinoIcons.plus,
-                onPressed: () => _showManualAddDialog(l10n),
-              ),
-
-              const Spacer(),
-
-              // Settings button
-              _buildIconButton(
-                icon: CupertinoIcons.settings,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (_) => const SettingsScreen(),
+              GestureDetector(
+                onTap: () => _showManualAddDialog(l10n),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.grey[300]!,
                     ),
-                  );
-                },
+                  ),
+                  child: Icon(
+                    CupertinoIcons.plus,
+                    color: Colors.grey[700],
+                    size: 22,
+                  ),
+                ),
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildIconButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    bool isActive = false,
-  }) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 54,
-        height: 54,
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0072CE), Color(0xFF00246B)],
-                )
-              : null,
-          color: isActive ? null : Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isActive
-                ? const Color(0xFF0072CE).withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.1),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: isActive ? Colors.white : Colors.white70,
-          size: 24,
-        ),
-      ),
     );
   }
 
@@ -638,34 +469,111 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _showManualAddDialog(AppLocalizations l10n) {
     final ipController = TextEditingController();
+    bool isSearching = false;
+    String? errorMessage;
 
     showCupertinoDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text(l10n.get('addPlayStation')),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: CupertinoTextField(
-            controller: ipController,
-            placeholder: l10n.get('ipAddressHint'),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => CupertinoAlertDialog(
+          title: Text(l10n.get('addPlayStation')),
+          content: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Column(
+              children: [
+                CupertinoTextField(
+                  controller: ipController,
+                  placeholder: l10n.get('ipAddressHint'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  enabled: !isSearching,
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    errorMessage!,
+                    style: const TextStyle(
+                      color: CupertinoColors.destructiveRed,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+                if (isSearching) ...[
+                  const SizedBox(height: 16),
+                  const CupertinoActivityIndicator(),
+                ],
+              ],
+            ),
           ),
+          actions: [
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: isSearching ? null : () => Navigator.pop(dialogContext),
+              child: Text(l10n.get('cancel')),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: isSearching
+                  ? null
+                  : () async {
+                      final ip = ipController.text.trim();
+                      if (ip.isEmpty) {
+                        setDialogState(() {
+                          errorMessage = l10n.get('ipAddress');
+                        });
+                        return;
+                      }
+
+                      // Validate IP format and range
+                      bool isValidIp(String ip) {
+                        final parts = ip.split('.');
+                        if (parts.length != 4) return false;
+                        for (final part in parts) {
+                          final num = int.tryParse(part);
+                          if (num == null || num < 0 || num > 255) return false;
+                        }
+                        return true;
+                      }
+
+                      if (!isValidIp(ip)) {
+                        setDialogState(() {
+                          errorMessage = l10n.get('invalidIpFormat');
+                        });
+                        return;
+                      }
+
+                      setDialogState(() {
+                        isSearching = true;
+                        errorMessage = null;
+                      });
+
+                      try {
+                        final appState = this.context.read<AppState>();
+                        final host = await appState.discoveryService.probeHost(ip);
+
+                        if (host != null) {
+                          appState.updateHost(host);
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+                        } else {
+                          setDialogState(() {
+                            isSearching = false;
+                            errorMessage = l10n.get('noPlayStationAtAddress');
+                          });
+                        }
+                      } catch (e) {
+                        setDialogState(() {
+                          isSearching = false;
+                          errorMessage = '${l10n.get('searchFailedPrefix')}: $e';
+                        });
+                      }
+                    },
+              child: Text(isSearching
+                  ? l10n.get('searching')
+                  : l10n.get('add')),
+            ),
+          ],
         ),
-        actions: [
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.get('cancel')),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Add manual host
-            },
-            child: Text(l10n.get('add')),
-          ),
-        ],
       ),
     );
   }

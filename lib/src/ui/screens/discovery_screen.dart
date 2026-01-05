@@ -35,40 +35,27 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0A0E21),
-              Color(0xFF1A1F38),
-              Color(0xFF0D1B2A),
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(l10n),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      _buildHostInfo(l10n),
-                      const SizedBox(height: 32),
-                      if (widget.host.isRegistered)
-                        _buildConnectSection(l10n)
-                      else
-                        _buildRegisterSection(l10n),
-                    ],
-                  ),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildAppBar(l10n),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                child: Column(
+                  children: [
+                    _buildHostInfo(l10n),
+                    const SizedBox(height: 24),
+                    if (widget.host.isRegistered)
+                      _buildConnectSection(l10n)
+                    else
+                      _buildRegisterSection(l10n),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -76,23 +63,28 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
   Widget _buildAppBar(AppLocalizations l10n) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.back,
-                color: Colors.white70,
+                color: Colors.grey[700],
                 size: 20,
               ),
             ),
@@ -103,8 +95,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               widget.host.hostName,
               style: const TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
               ),
             ),
           ),
@@ -114,27 +106,19 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }
 
   Widget _buildHostInfo(AppLocalizations l10n) {
+    final isOnline = widget.host.state == HostState.ready;
+    final isStandby = widget.host.state == HostState.standby;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1A2845),
-            Color(0xFF0F172A),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF0072CE).withValues(alpha: 0.4),
-          width: 1.5,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -142,84 +126,96 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         children: [
           // Console icon
           Container(
-            width: 90,
-            height: 90,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0072CE),
-                  Color(0xFF00246B),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0072CE).withValues(alpha: 0.5),
-                  blurRadius: 25,
-                ),
-              ],
+              color: isOnline ? const Color(0xFF1A1A1A) : Colors.grey[300],
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Center(
               child: Icon(
                 widget.host.isPS5
-                    ? CupertinoIcons.device_desktop
-                    : CupertinoIcons.game_controller,
-                size: 42,
-                color: Colors.white,
+                    ? CupertinoIcons.desktopcomputer
+                    : CupertinoIcons.gamecontroller,
+                size: 32,
+                color: isOnline ? Colors.white : Colors.grey[600],
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Console name
           Text(
             widget.host.hostName,
             style: const TextStyle(
-              fontSize: 26,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF1A1A1A),
             ),
           ),
           const SizedBox(height: 8),
+
+          // Console type badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: widget.host.isPS5
-                    ? [const Color(0xFF00246B), const Color(0xFF003791)]
-                    : [const Color(0xFF003791), const Color(0xFF0072CE)],
-              ),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               widget.host.isPS5 ? 'PlayStation 5' : 'PlayStation 4',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+
+          // Status indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isOnline
+                      ? const Color(0xFF4CAF50)
+                      : isStandby
+                          ? const Color(0xFFFF9800)
+                          : Colors.grey,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isOnline
+                    ? l10n.get('online')
+                    : isStandby
+                        ? l10n.get('standby')
+                        : l10n.get('offline'),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
 
           // Details
           _buildInfoRow(l10n.get('ipAddressLabel'), widget.host.hostAddress),
           _buildInfoRow(l10n.get('systemVersion'), widget.host.systemVersion),
-          _buildInfoRow(
-            l10n.get('status'),
-            widget.host.state == HostState.ready
-                ? l10n.get('online')
-                : widget.host.state == HostState.standby
-                    ? l10n.get('standby')
-                    : l10n.get('offline'),
-          ),
           if (widget.host.runningAppName != null)
             _buildInfoRow(l10n.get('nowPlaying'), widget.host.runningAppName!),
           _buildInfoRow(
             l10n.get('registration'),
-            widget.host.isRegistered ? l10n.get('registered') : l10n.get('notRegistered'),
+            widget.host.isRegistered
+                ? l10n.get('registered')
+                : l10n.get('notRegistered'),
           ),
         ],
       ),
@@ -228,7 +224,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -236,7 +232,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Colors.grey[500],
             ),
           ),
           Text(
@@ -244,7 +240,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: Color(0xFF1A1A1A),
             ),
           ),
         ],
@@ -257,34 +253,50 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       children: [
         if (_statusMessage != null) ...[
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.1),
-              ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 if (_isConnecting)
-                  const CupertinoActivityIndicator()
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF1A1A1A)),
+                    ),
+                  )
                 else
-                  const Icon(
+                  Icon(
                     CupertinoIcons.info_circle,
-                    color: Colors.white70,
+                    color: Colors.grey[600],
+                    size: 20,
                   ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _statusMessage!,
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
         ],
 
         // Connect button
@@ -294,7 +306,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           onPressed: _isConnecting ? null : () => _connect(l10n),
           isPrimary: true,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // Wake up button (if standby)
         if (widget.host.state == HostState.standby) ...[
@@ -303,7 +315,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             label: l10n.get('wakeUpConsole'),
             onPressed: _isConnecting ? null : () => _wakeUp(l10n),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
         ],
 
         // Unregister button
@@ -324,73 +336,70 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       children: [
         // Instructions
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF0072CE).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: const Color(0xFF0072CE).withValues(alpha: 0.3),
-            ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0072CE).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.info_circle_fill,
-                      color: Color(0xFF0072CE),
-                      size: 20,
-                    ),
+                  Icon(
+                    CupertinoIcons.info_circle_fill,
+                    color: Colors.grey[600],
+                    size: 20,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Text(
                     l10n.get('registrationRequired'),
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Color(0xFF1A1A1A),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Text(
                 l10n.getFormatted('registrationStep1', {'console': consoleName}),
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.grey[600],
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 l10n.get('registrationStep2'),
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.grey[600],
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 l10n.get('registrationStep3'),
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.grey[600],
                   height: 1.5,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
 
         // PSN ID field
         _buildTextField(
@@ -398,7 +407,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           placeholder: l10n.get('psnId'),
           icon: CupertinoIcons.person,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // PIN field
         _buildTextField(
@@ -408,42 +417,54 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           keyboardType: TextInputType.number,
           maxLength: 8,
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
 
         if (_statusMessage != null) ...[
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _isRegistering
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : const Color(0xFFE53935).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _isRegistering
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : const Color(0xFFE53935).withValues(alpha: 0.3),
-              ),
+                  ? Colors.white
+                  : const Color(0xFFFFF3F3),
+              borderRadius: BorderRadius.circular(12),
+              border: _isRegistering
+                  ? null
+                  : Border.all(color: const Color(0xFFFFCDD2)),
             ),
             child: Row(
               children: [
                 if (_isRegistering)
-                  const CupertinoActivityIndicator()
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF1A1A1A)),
+                    ),
+                  )
                 else
                   const Icon(
                     CupertinoIcons.exclamationmark_circle,
                     color: Color(0xFFE53935),
+                    size: 20,
                   ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _statusMessage!,
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(
+                      color: _isRegistering
+                          ? Colors.grey[700]
+                          : const Color(0xFFE53935),
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
         ],
 
         // Register button
@@ -466,33 +487,33 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.08),
-            Colors.white.withValues(alpha: 0.03),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         maxLength: maxLength,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(
+          color: Color(0xFF1A1A1A),
+          fontSize: 16,
+        ),
         decoration: InputDecoration(
           hintText: placeholder,
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-          prefixIcon: Icon(icon, color: Colors.white54),
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          prefixIcon: Icon(icon, color: Colors.grey[500]),
           border: InputBorder.none,
           counterText: '',
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 18,
+            horizontal: 16,
+            vertical: 16,
           ),
         ),
       ),
@@ -510,36 +531,27 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       onTap: onPressed,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          gradient: isPrimary && onPressed != null
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0072CE), Color(0xFF00246B)],
-                )
-              : null,
-          color: isPrimary
-              ? null
+          color: isPrimary && onPressed != null
+              ? const Color(0xFF1A1A1A)
               : isDestructive
-                  ? const Color(0xFFE53935).withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
+                  ? const Color(0xFFFFF3F3)
+                  : Colors.white,
+          borderRadius: BorderRadius.circular(14),
           border: !isPrimary
               ? Border.all(
                   color: isDestructive
-                      ? const Color(0xFFE53935).withValues(alpha: 0.3)
-                      : Colors.white.withValues(alpha: 0.1),
+                      ? const Color(0xFFFFCDD2)
+                      : Colors.grey[300]!,
                 )
-              : Border.all(
-                  color: const Color(0xFF0072CE).withValues(alpha: 0.5),
-                ),
-          boxShadow: isPrimary && onPressed != null
+              : null,
+          boxShadow: isPrimary
               ? [
                   BoxShadow(
-                    color: const Color(0xFF0072CE).withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
                 ]
               : null,
@@ -550,23 +562,27 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             Icon(
               icon,
               color: onPressed == null
-                  ? Colors.white38
-                  : isDestructive
-                      ? const Color(0xFFE53935)
-                      : Colors.white,
-              size: 22,
+                  ? Colors.grey[400]
+                  : isPrimary
+                      ? Colors.white
+                      : isDestructive
+                          ? const Color(0xFFE53935)
+                          : Colors.grey[700],
+              size: 20,
             ),
             const SizedBox(width: 10),
             Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: onPressed == null
-                    ? Colors.white38
-                    : isDestructive
-                        ? const Color(0xFFE53935)
-                        : Colors.white,
+                    ? Colors.grey[400]
+                    : isPrimary
+                        ? Colors.white
+                        : isDestructive
+                            ? const Color(0xFFE53935)
+                            : const Color(0xFF1A1A1A),
               ),
             ),
           ],
@@ -617,9 +633,16 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
     try {
       final appState = context.read<AppState>();
+      final registKey = widget.host.registrationInfo?.rpRegistKey;
+      if (registKey == null) {
+        setState(() {
+          _statusMessage = l10n.get('registrationRequired');
+        });
+        return;
+      }
       await appState.discoveryService.wakeup(
         widget.host,
-        widget.host.registrationInfo!.rpRegistKey,
+        registKey,
       );
 
       setState(() {
@@ -628,6 +651,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
       // Wait and refresh
       await Future.delayed(const Duration(seconds: 5));
+      if (!mounted) return;
       await appState.startDiscovery();
     } catch (e) {
       setState(() {

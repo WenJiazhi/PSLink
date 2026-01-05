@@ -7,6 +7,7 @@ import 'package:pslink/src/models/controller_state.dart';
 import 'package:pslink/src/protocol/session.dart';
 import 'package:pslink/src/services/controller_service.dart';
 import '../widgets/virtual_controller_overlay.dart';
+import 'package:pslink/l10n/app_localizations.dart';
 
 class StreamingScreen extends StatefulWidget {
   final PSHost host;
@@ -26,7 +27,8 @@ class _StreamingScreenState extends State<StreamingScreen>
   bool _isConnected = false;
   bool _showControls = true;
   bool _showVirtualController = true;
-  String _statusMessage = 'Connecting...';
+  String? _statusKey = 'connecting';  // Store key, not message
+  String? _statusError;  // Store error detail separately
 
   // Stream stats
   int _fps = 0;
@@ -88,7 +90,8 @@ class _StreamingScreenState extends State<StreamingScreen>
     } catch (e) {
       setState(() {
         _isConnecting = false;
-        _statusMessage = 'Connection failed: $e';
+        _statusKey = 'connectionFailed';
+        _statusError = e.toString();
       });
     }
   }
@@ -109,7 +112,8 @@ class _StreamingScreenState extends State<StreamingScreen>
         break;
       case SessionEventType.error:
         setState(() {
-          _statusMessage = event.message ?? 'Unknown error';
+          _statusKey = 'unknownError';
+          _statusError = event.message;
         });
         break;
     }
@@ -119,25 +123,31 @@ class _StreamingScreenState extends State<StreamingScreen>
     setState(() {
       switch (state) {
         case SessionState.connecting:
-          _statusMessage = 'Connecting...';
+          _statusKey = 'connecting';
+          _statusError = null;
           break;
         case SessionState.handshaking:
-          _statusMessage = 'Authenticating...';
+          _statusKey = 'authenticating';
+          _statusError = null;
           break;
         case SessionState.authenticated:
-          _statusMessage = 'Starting stream...';
+          _statusKey = 'startingStream';
+          _statusError = null;
           break;
         case SessionState.streaming:
           _isConnecting = false;
           _isConnected = true;
-          _statusMessage = '';
+          _statusKey = null;
+          _statusError = null;
           break;
         case SessionState.disconnecting:
-          _statusMessage = 'Disconnecting...';
+          _statusKey = 'disconnecting';
+          _statusError = null;
           break;
         case SessionState.disconnected:
           _isConnected = false;
-          _statusMessage = 'Disconnected';
+          _statusKey = 'disconnected';
+          _statusError = null;
           break;
         case SessionState.error:
           _isConnecting = false;
@@ -154,6 +164,16 @@ class _StreamingScreenState extends State<StreamingScreen>
       _bitrate = 10000; // kbps placeholder
       _latency = _session?.rttUs ?? 0;
     });
+  }
+
+  String _getStatusMessage(AppLocalizations l10n) {
+    if (_statusKey == null) return '';
+
+    final message = l10n.get(_statusKey!);
+    if (_statusError != null) {
+      return '$message: $_statusError';
+    }
+    return message;
   }
 
   void _resetHideTimer() {
@@ -210,10 +230,15 @@ class _StreamingScreenState extends State<StreamingScreen>
         child: _isConnected
             ? Container(
                 color: const Color(0xFF1A1A1A),
-                child: const Center(
-                  child: Text(
-                    'Video Stream',
-                    style: TextStyle(color: Colors.white54),
+                child: Center(
+                  child: Builder(
+                    builder: (context) {
+                      final l10n = AppLocalizations.of(context);
+                      return Text(
+                        l10n.get('videoStream'),
+                        style: const TextStyle(color: Colors.white54),
+                      );
+                    },
                   ),
                 ),
               )
@@ -226,63 +251,68 @@ class _StreamingScreenState extends State<StreamingScreen>
     return Container(
       color: Colors.black.withValues(alpha: 0.8),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (_isConnecting) ...[
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF0072CE), Color(0xFF00246B)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0072CE).withValues(alpha: 0.4),
-                      blurRadius: 30,
+        child: Builder(
+          builder: (context) {
+            final l10n = AppLocalizations.of(context);
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isConnecting) ...[
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF0072CE), Color(0xFF00246B)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0072CE).withValues(alpha: 0.4),
+                          blurRadius: 30,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: const Center(
-                  child: CupertinoActivityIndicator(
+                    child: const Center(
+                      child: CupertinoActivityIndicator(
+                        color: Colors.white,
+                        radius: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                Text(
+                  _getStatusMessage(l10n),
+                  style: const TextStyle(
+                    fontSize: 18,
                     color: Colors.white,
-                    radius: 16,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
-            Text(
-              _statusMessage,
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (!_isConnecting)
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                const SizedBox(height: 24),
+                if (!_isConnecting)
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        l10n.get('goBack'),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Go Back',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -467,15 +497,16 @@ class _StreamingScreenState extends State<StreamingScreen>
   }
 
   void _disconnect() {
+    final l10n = AppLocalizations.of(context);
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Disconnect'),
-        content: const Text('End the Remote Play session?'),
+        title: Text(l10n.get('disconnect')),
+        content: Text(l10n.get('endRemotePlaySession')),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.get('cancel')),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
@@ -484,7 +515,7 @@ class _StreamingScreenState extends State<StreamingScreen>
               _session?.disconnect();
               Navigator.pop(context);
             },
-            child: const Text('Disconnect'),
+            child: Text(l10n.get('disconnect')),
           ),
         ],
       ),
@@ -492,6 +523,7 @@ class _StreamingScreenState extends State<StreamingScreen>
   }
 
   void _showStreamSettings() {
+    final l10n = AppLocalizations.of(context);
     showCupertinoModalPopup(
       context: context,
       builder: (context) => Container(
@@ -515,9 +547,9 @@ class _StreamingScreenState extends State<StreamingScreen>
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Stream Settings',
-              style: TextStyle(
+            Text(
+              l10n.get('streamSettings'),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -525,22 +557,22 @@ class _StreamingScreenState extends State<StreamingScreen>
             ),
             const SizedBox(height: 24),
             _buildSettingRow(
-              'Resolution',
+              l10n.get('resolution'),
               '1080p',
               onTap: () {},
             ),
             _buildSettingRow(
-              'Frame Rate',
+              l10n.get('frameRate'),
               '60 FPS',
               onTap: () {},
             ),
             _buildSettingRow(
-              'Bitrate',
-              'Auto (10 Mbps)',
+              l10n.get('bitrateLimit'),
+              l10n.get('bitrateAuto'),
               onTap: () {},
             ),
             _buildSettingRow(
-              'Codec',
+              l10n.get('videoCodec'),
               'H.264',
               onTap: () {},
             ),

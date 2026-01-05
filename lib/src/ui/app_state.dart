@@ -33,7 +33,13 @@ class AppState extends ChangeNotifier {
     _isDiscovering = true;
     notifyListeners();
 
-    await _discoveryService.startDiscovery(searchPS5: true);
+    try {
+      await _discoveryService.startDiscovery();
+    } catch (e) {
+      _isDiscovering = false;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   void stopDiscovery() {
