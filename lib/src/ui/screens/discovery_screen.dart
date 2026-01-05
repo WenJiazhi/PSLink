@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
 import 'package:pslink/src/models/ps_host.dart';
 import 'package:pslink/src/protocol/registration.dart';
+import 'package:pslink/src/services/psn_account_storage.dart';
 import 'package:pslink/l10n/app_localizations.dart';
 import 'streaming_screen.dart';
 
@@ -22,11 +24,28 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   String? _statusMessage;
   final _pinController = TextEditingController();
   final _psnIdController = TextEditingController();
+  final _psnAccountIdController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedPsnAccountId();
+  }
+
+  Future<void> _loadSavedPsnAccountId() async {
+    final saved = await PSNAccountStorage.getPSNAccountId();
+    if (saved != null && saved.isNotEmpty) {
+      setState(() {
+        _psnAccountIdController.text = saved;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _pinController.dispose();
     _psnIdController.dispose();
+    _psnAccountIdController.dispose();
     super.dispose();
   }
 
@@ -409,6 +428,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         ),
         const SizedBox(height: 12),
 
+        // PSN Account ID field with help link
+        _buildPSNAccountIdField(l10n),
+        const SizedBox(height: 12),
+
         // PIN field
         _buildTextField(
           controller: _pinController,
@@ -518,6 +541,75 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildPSNAccountIdField(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _psnAccountIdController,
+            style: const TextStyle(
+              color: Color(0xFF1A1A1A),
+              fontSize: 16,
+            ),
+            decoration: InputDecoration(
+              hintText: l10n.get('psnAccountId'),
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              prefixIcon: Icon(CupertinoIcons.number, color: Colors.grey[500]),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              l10n.get('psnAccountIdHint'),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _showAccountIdHelp(l10n),
+              child: Text(
+                l10n.get('psnAccountIdHelp'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF0072CE),
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showAccountIdHelp(AppLocalizations l10n) async {
+    final url = Uri.parse(l10n.get('psnAccountIdHelpUrl'));
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _buildActionButton({
@@ -667,6 +759,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   Future<void> _register(AppLocalizations l10n) async {
     final pin = _pinController.text.trim();
     final psnId = _psnIdController.text.trim();
+    final psnAccountIdInput = _psnAccountIdController.text.trim();
 
     if (psnId.isEmpty) {
       setState(() {
@@ -682,6 +775,22 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       return;
     }
 
+    // Determine PSN Account ID to use
+    String psnAccountId;
+    if (psnAccountIdInput.isNotEmpty) {
+      // Validate the input
+      if (!PSNAccountStorage.isValidPSNAccountId(psnAccountIdInput)) {
+        setState(() {
+          _statusMessage = l10n.get('invalidPsnAccountId');
+        });
+        return;
+      }
+      psnAccountId = psnAccountIdInput;
+    } else {
+      // Use default if empty
+      psnAccountId = PSNAccountStorage.getDefaultAccountId();
+    }
+
     setState(() {
       _isRegistering = true;
       _statusMessage = l10n.get('registering');
@@ -692,11 +801,16 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       final result = await service.register(
         host: widget.host,
         pin: pin,
-        psnAccountId: '0000000000000000', // Placeholder
+        psnAccountId: psnAccountId,
         psnOnlineId: psnId,
       );
 
       if (result.success) {
+        // Save PSN Account ID for future use
+        if (psnAccountIdInput.isNotEmpty) {
+          await PSNAccountStorage.savePSNAccountId(psnAccountId);
+        }
+
         // Update host with registration info
         final updatedHost = widget.host.copyWith(
           registrationInfo: RegisteredHostInfo(

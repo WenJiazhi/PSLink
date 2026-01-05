@@ -6,6 +6,7 @@ import 'package:pslink/src/models/ps_host.dart';
 import 'package:pslink/src/models/controller_state.dart';
 import 'package:pslink/src/protocol/session.dart';
 import 'package:pslink/src/services/controller_service.dart';
+import 'package:pslink/src/services/psn_account_storage.dart';
 import '../widgets/virtual_controller_overlay.dart';
 import 'package:pslink/l10n/app_localizations.dart';
 
@@ -73,9 +74,13 @@ class _StreamingScreenState extends State<StreamingScreen>
 
   Future<void> _initSession() async {
     try {
+      // Load saved PSN Account ID or use default
+      final psnAccountId = await PSNAccountStorage.getPSNAccountId() ??
+                           PSNAccountStorage.getDefaultAccountId();
+
       _session = PSSession(
         host: widget.host,
-        psnAccountId: '0000000000000000',
+        psnAccountId: psnAccountId,
         rpKey: widget.host.registrationInfo?.rpRegistKey ?? '',
       );
 

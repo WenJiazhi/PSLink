@@ -12,6 +12,10 @@ class PSConstants {
   static const int sessionPort = 9295;
   static const int registrationPort = 9295;
 
+  // Registration Endpoints
+  static const String registrationEndpointPS4 = '/sce/rp/regist';
+  static const String registrationEndpointPS5 = '/sie/ps5/rp/sess/rgst';
+
   // Protocol Versions
   static const String protocolVersionPS4 = '00020020';
   static const String protocolVersionPS5 = '00030010';

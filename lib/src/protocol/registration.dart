@@ -138,25 +138,120 @@ class RegistrationService {
     required String psnAccountId,
     required String psnOnlineId,
   }) {
+    // PS5 uses different registration protocol than PS4
+    if (host.isPS5) {
+      return _buildPS5RegistrationRequest(
+        host: host,
+        pin: pin,
+        psnAccountId: psnAccountId,
+        psnOnlineId: psnOnlineId,
+      );
+    } else {
+      return _buildPS4RegistrationRequest(
+        host: host,
+        pin: pin,
+        psnAccountId: psnAccountId,
+        psnOnlineId: psnOnlineId,
+      );
+    }
+  }
+
+  /// Build PS4 registration HTTP request (legacy protocol)
+  Uint8List _buildPS4RegistrationRequest({
+    required PSHost host,
+    required String pin,
+    required String psnAccountId,
+    required String psnOnlineId,
+  }) {
+    // Normalize account ID for PS4 as well
+    String normalizedAccountId = _normalizeAccountId(psnAccountId);
+
     final headers = <String, String>{
       'Host': '${host.hostAddress}:${PSConstants.registrationPort}',
       'User-Agent': 'PSLink/1.0',
-      'RP-Version': host.isPS5 ? '12.0' : '9.0',
+      'RP-Version': '9.0',
       'RP-Registkey': '',
       'RP-ClientType': '11', // iOS
-      'RP-Auth': psnAccountId,
+      'RP-Auth': normalizedAccountId,
       'RP-PSN-ID': psnOnlineId,
       'RP-Pin': pin,
     };
 
     final buffer = StringBuffer();
-    buffer.writeln('GET /sce/rp/regist HTTP/1.1');
+    buffer.write('GET ${PSConstants.registrationEndpointPS4} HTTP/1.1\r\n');
     headers.forEach((key, value) {
-      buffer.writeln('$key: $value');
+      buffer.write('$key: $value\r\n');
     });
-    buffer.writeln();
+    buffer.write('\r\n');
 
     return Uint8List.fromList(utf8.encode(buffer.toString()));
+  }
+
+  /// Build PS5 registration HTTP request (new protocol)
+  /// Based on chiaki implementation: uses POST to /sie/ps5/rp/sess/rgst
+  /// with Np-AccountId header instead of RP-Auth
+  Uint8List _buildPS5RegistrationRequest({
+    required PSHost host,
+    required String pin,
+    required String psnAccountId,
+    required String psnOnlineId,
+  }) {
+    // Validate and normalize PSN Account ID (should be Base64 encoded 8 bytes)
+    String accountIdBase64 = _normalizeAccountId(psnAccountId);
+
+    final headers = <String, String>{
+      'Host': '${host.hostAddress}:${PSConstants.registrationPort}',
+      'User-Agent': 'PSLink/1.0',
+      'RP-Version': '12.0',
+      'RP-Registkey': '',
+      'RP-ClientType': '11', // iOS
+      'Np-AccountId': accountIdBase64, // PS5 uses Np-AccountId instead of RP-Auth
+      'RP-PSN-ID': psnOnlineId,
+      'RP-Pin': pin,
+    };
+
+    final buffer = StringBuffer();
+    // PS5 uses POST to /sie/ps5/rp/sess/rgst instead of GET /sce/rp/regist
+    buffer.write('POST ${PSConstants.registrationEndpointPS5} HTTP/1.1\r\n');
+    headers.forEach((key, value) {
+      buffer.write('$key: $value\r\n');
+    });
+    buffer.write('Content-Length: 0\r\n');
+    buffer.write('\r\n');
+
+    return Uint8List.fromList(utf8.encode(buffer.toString()));
+  }
+
+  /// Normalize PSN Account ID to valid Base64 format
+  /// Accepts: Base64 encoded 8 bytes, or hex string (16 chars)
+  String _normalizeAccountId(String accountId) {
+    // First, try to decode as Base64
+    try {
+      final decoded = base64.decode(accountId);
+      if (decoded.length == PSConstants.psnAccountIdSize) {
+        return accountId; // Already valid Base64
+      }
+      // Wrong length, create default
+      return base64.encode(List.filled(PSConstants.psnAccountIdSize, 0));
+    } catch (e) {
+      // Not valid Base64
+    }
+
+    // Try to parse as hex string (16 hex chars = 8 bytes)
+    if (accountId.length == 16 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(accountId)) {
+      try {
+        final bytes = <int>[];
+        for (int i = 0; i < accountId.length; i += 2) {
+          bytes.add(int.parse(accountId.substring(i, i + 2), radix: 16));
+        }
+        return base64.encode(bytes);
+      } catch (e) {
+        // Hex parsing failed
+      }
+    }
+
+    // Fallback to default (8 bytes of zeros)
+    return base64.encode(List.filled(PSConstants.psnAccountIdSize, 0));
   }
 
   /// Parse registration response
