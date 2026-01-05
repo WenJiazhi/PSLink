@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:pslink/src/models/controller_state.dart';
@@ -21,11 +22,18 @@ class VirtualControllerOverlay extends StatefulWidget {
 
 class _VirtualControllerOverlayState extends State<VirtualControllerOverlay> {
   final Map<int, Offset> _activeTouches = {};
+  StreamSubscription? _stateSubscription;
 
   @override
   void initState() {
     super.initState();
-    widget.controller.stateStream.listen(widget.onControllerStateChanged);
+    _stateSubscription = widget.controller.stateStream.listen(widget.onControllerStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _stateSubscription?.cancel();
+    super.dispose();
   }
 
   @override

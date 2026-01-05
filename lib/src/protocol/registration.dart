@@ -157,31 +157,29 @@ class RegistrationService {
   }
 
   /// Build PS4 registration HTTP request (legacy protocol)
+  /// PS4 uses GET /sce/rp/regist with RP-Auth header
+  /// RP-Version: 1.0 for PS4
   Uint8List _buildPS4RegistrationRequest({
     required PSHost host,
     required String pin,
     required String psnAccountId,
     required String psnOnlineId,
   }) {
-    // Normalize account ID for PS4 as well
+    // Normalize account ID for PS4
     String normalizedAccountId = _normalizeAccountId(psnAccountId);
 
-    final headers = <String, String>{
-      'Host': '${host.hostAddress}:${PSConstants.registrationPort}',
-      'User-Agent': 'PSLink/1.0',
-      'RP-Version': '9.0',
-      'RP-Registkey': '',
-      'RP-ClientType': '11', // iOS
-      'RP-Auth': normalizedAccountId,
-      'RP-PSN-ID': psnOnlineId,
-      'RP-Pin': pin,
-    };
-
+    // Build request with correct header format
     final buffer = StringBuffer();
     buffer.write('GET ${PSConstants.registrationEndpointPS4} HTTP/1.1\r\n');
-    headers.forEach((key, value) {
-      buffer.write('$key: $value\r\n');
-    });
+    buffer.write('Host: ${host.hostAddress}:${PSConstants.registrationPort}\r\n');
+    buffer.write('User-Agent: remoteplay Windows\r\n'); // Match official client
+    buffer.write('Connection: close\r\n');
+    buffer.write('RP-Registkey: \r\n');
+    buffer.write('RP-Version: 1.0\r\n'); // PS4 uses 1.0
+    buffer.write('RP-ClientType: 11\r\n'); // iOS client type
+    buffer.write('RP-Auth: $normalizedAccountId\r\n'); // PS4 uses RP-Auth
+    buffer.write('RP-PSN-ID: $psnOnlineId\r\n');
+    buffer.write('RP-Pin: $pin\r\n');
     buffer.write('\r\n');
 
     return Uint8List.fromList(utf8.encode(buffer.toString()));
@@ -190,6 +188,11 @@ class RegistrationService {
   /// Build PS5 registration HTTP request (new protocol)
   /// Based on chiaki implementation: uses POST to /sie/ps5/rp/sess/rgst
   /// with Np-AccountId header instead of RP-Auth
+  /// Key differences from PS4:
+  /// - User-Agent must be "remoteplay Windows" (official client UA)
+  /// - RP-Version must be "2.0" (not 1.0 like PS4)
+  /// - Uses Np-AccountId instead of RP-Auth
+  /// - Connection: close is required
   Uint8List _buildPS5RegistrationRequest({
     required PSHost host,
     required String pin,
@@ -199,24 +202,19 @@ class RegistrationService {
     // Validate and normalize PSN Account ID (should be Base64 encoded 8 bytes)
     String accountIdBase64 = _normalizeAccountId(psnAccountId);
 
-    final headers = <String, String>{
-      'Host': '${host.hostAddress}:${PSConstants.registrationPort}',
-      'User-Agent': 'PSLink/1.0',
-      'RP-Version': '12.0',
-      'RP-Registkey': '',
-      'RP-ClientType': '11', // iOS
-      'Np-AccountId': accountIdBase64, // PS5 uses Np-AccountId instead of RP-Auth
-      'RP-PSN-ID': psnOnlineId,
-      'RP-Pin': pin,
-    };
-
+    // Build request with exact header format matching chiaki implementation
     final buffer = StringBuffer();
-    // PS5 uses POST to /sie/ps5/rp/sess/rgst instead of GET /sce/rp/regist
     buffer.write('POST ${PSConstants.registrationEndpointPS5} HTTP/1.1\r\n');
-    headers.forEach((key, value) {
-      buffer.write('$key: $value\r\n');
-    });
+    buffer.write('Host: ${host.hostAddress}:${PSConstants.registrationPort}\r\n');
+    buffer.write('User-Agent: remoteplay Windows\r\n'); // MUST match official client
+    buffer.write('Connection: close\r\n'); // Required by PS5
     buffer.write('Content-Length: 0\r\n');
+    buffer.write('RP-Registkey: \r\n');
+    buffer.write('RP-Version: 2.0\r\n'); // PS5 uses 2.0, not 12.0
+    buffer.write('Np-AccountId: $accountIdBase64\r\n'); // PS5 uses Np-AccountId
+    buffer.write('RP-ClientType: 11\r\n'); // iOS client type
+    buffer.write('RP-PSN-ID: $psnOnlineId\r\n');
+    buffer.write('RP-Pin: $pin\r\n');
     buffer.write('\r\n');
 
     return Uint8List.fromList(utf8.encode(buffer.toString()));

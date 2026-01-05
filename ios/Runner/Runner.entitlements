@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Multicast networking entitlement for UDP broadcast discovery -->
+	<!-- Note: This is a restricted entitlement. To use it, you must: -->
+	<!-- 1. Submit a request to Apple via developer.apple.com -->
+	<!-- 2. Explain the use case: PlayStation Remote Play console discovery -->
+	<!-- 3. Wait for Apple approval before building for App Store -->
+	<!-- For development/TestFlight, the app may still work with manual IP entry -->
+	<key>com.apple.developer.networking.multicast</key>
+	<true/>
+</dict>
+</plist>
