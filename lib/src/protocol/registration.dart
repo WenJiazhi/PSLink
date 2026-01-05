@@ -52,13 +52,16 @@ class RegistrationService {
 
   Socket? _socket;
   bool _isCancelled = false;
+  
+  // Store crypto state for response decryption
+  Uint8List? _bright;
 
   Stream<RegistrationEvent> get eventStream => _eventController.stream;
 
   /// Register with a PlayStation console
   /// [host] - The discovered PlayStation host
   /// [pin] - The 8-digit PIN displayed on the console
-  /// [psnAccountId] - The PSN account ID (8 bytes)
+  /// [psnAccountId] - The PSN account ID (8 bytes, Base64 encoded)
   /// [psnOnlineId] - The PSN online ID (username)
   Future<RegistrationResult> register({
     required PSHost host,
@@ -100,15 +103,48 @@ class RegistrationService {
 
       // Wait for response
       final responseCompleter = Completer<Uint8List>();
+      final chunks = <int>[];
+      
       final subscription = _socket!.listen(
         (data) {
-          if (!responseCompleter.isCompleted) {
-            responseCompleter.complete(Uint8List.fromList(data));
+          chunks.addAll(data);
+          // Check if we have complete response (look for double CRLF and content)
+          final responseStr = utf8.decode(chunks, allowMalformed: true);
+          if (responseStr.contains('\r\n\r\n')) {
+            // Check if we have Content-Length and received all data
+            final headerEnd = responseStr.indexOf('\r\n\r\n');
+            if (headerEnd > 0) {
+              final headers = responseStr.substring(0, headerEnd);
+              final contentLengthMatch = RegExp(r'Content-Length:\s*(\d+)', caseSensitive: false).firstMatch(headers);
+              if (contentLengthMatch != null) {
+                final contentLength = int.parse(contentLengthMatch.group(1)!);
+                final expectedTotal = headerEnd + 4 + contentLength;
+                if (chunks.length >= expectedTotal) {
+                  if (!responseCompleter.isCompleted) {
+                    responseCompleter.complete(Uint8List.fromList(chunks));
+                  }
+                }
+              } else {
+                // No content length, complete on first response
+                if (!responseCompleter.isCompleted) {
+                  responseCompleter.complete(Uint8List.fromList(chunks));
+                }
+              }
+            }
           }
         },
         onError: (error) {
           if (!responseCompleter.isCompleted) {
             responseCompleter.completeError(error);
+          }
+        },
+        onDone: () {
+          if (!responseCompleter.isCompleted) {
+            if (chunks.isNotEmpty) {
+              responseCompleter.complete(Uint8List.fromList(chunks));
+            } else {
+              responseCompleter.completeError('Connection closed without response');
+            }
           }
         },
       );
@@ -123,7 +159,7 @@ class RegistrationService {
       _socket = null;
 
       // Parse response
-      return _parseRegistrationResponse(response);
+      return _parseRegistrationResponse(response, host.isPS5);
     } catch (e) {
       return _fail('Registration error: $e');
     } finally {
@@ -173,13 +209,10 @@ class RegistrationService {
     final buffer = StringBuffer();
     buffer.write('GET ${PSConstants.registrationEndpointPS4} HTTP/1.1\r\n');
     buffer.write('Host: ${host.hostAddress}:${PSConstants.registrationPort}\r\n');
-    buffer.write('User-Agent: remoteplay Windows\r\n'); // Match official client
+    buffer.write('User-Agent: remoteplay Windows\r\n');
     buffer.write('Connection: close\r\n');
-    buffer.write('RP-Registkey: \r\n');
-    buffer.write('RP-Version: 1.0\r\n'); // PS4 uses 1.0
-    buffer.write('RP-ClientType: 11\r\n'); // iOS client type
-    buffer.write('RP-Auth: $normalizedAccountId\r\n'); // PS4 uses RP-Auth
-    buffer.write('RP-PSN-ID: $psnOnlineId\r\n');
+    buffer.write('RP-Version: 1.0\r\n');
+    buffer.write('RP-Auth: $normalizedAccountId\r\n');
     buffer.write('RP-Pin: $pin\r\n');
     buffer.write('\r\n');
 
@@ -187,44 +220,44 @@ class RegistrationService {
   }
 
   /// Build PS5 registration HTTP request (new protocol)
-  /// Based on chiaki implementation: uses POST to /sie/ps5/rp/sess/rgst
-  /// with Np-AccountId header instead of RP-Auth
+  /// Based on chiaki-ng implementation
   /// Key differences from PS4:
-  /// - User-Agent must be "remoteplay Windows" (official client UA)
-  /// - RP-Version must be "2.0" (not 1.0 like PS4)
-  /// - Uses Np-AccountId instead of RP-Auth
-  /// - Connection: close is required
+  /// - Uses POST to /sie/ps5/rp/sess/rgst
   /// - Includes encrypted binary payload
+  /// - PIN is used for encryption, NOT sent in header
   Uint8List _buildPS5RegistrationRequest({
     required PSHost host,
     required String pin,
     required String psnAccountId,
     required String psnOnlineId,
   }) {
-    // Validate and normalize PSN Account ID (should be Base64 encoded 8 bytes)
+    // Parse PIN as integer
+    final pinInt = int.parse(pin);
+    
+    // Validate and normalize PSN Account ID
     String accountIdBase64 = _normalizeAccountId(psnAccountId);
 
     // Build the registration payload using PS5 crypto
-    final payload = PS5RegistCrypto.buildMinimalPayload(
+    final payloadResult = PS5RegistCrypto.buildRegistrationPayload(
       psnAccountId: accountIdBase64,
       psnOnlineId: psnOnlineId,
-      pin: pin,
+      pin: pinInt,
     );
+    
+    // Store bright key for response decryption
+    _bright = payloadResult.bright;
 
-    // Build HTTP headers
+    final payload = payloadResult.payload;
+
+    // Build HTTP headers - following chiaki format exactly
+    // Note: PIN is NOT sent in header for PS5, it's used for encryption
     final headerBuffer = StringBuffer();
     headerBuffer.write('POST ${PSConstants.registrationEndpointPS5} HTTP/1.1\r\n');
-    headerBuffer.write('Host: ${host.hostAddress}:${PSConstants.registrationPort}\r\n');
+    headerBuffer.write('HOST: ${host.hostAddress}\r\n');
     headerBuffer.write('User-Agent: remoteplay Windows\r\n');
     headerBuffer.write('Connection: close\r\n');
     headerBuffer.write('Content-Length: ${payload.length}\r\n');
-    headerBuffer.write('Content-Type: application/x-www-form-urlencoded\r\n');
-    headerBuffer.write('RP-Registkey: \r\n');
     headerBuffer.write('RP-Version: 2.0\r\n');
-    headerBuffer.write('Np-AccountId: $accountIdBase64\r\n');
-    headerBuffer.write('RP-ClientType: 11\r\n');
-    headerBuffer.write('RP-PSN-ID: $psnOnlineId\r\n');
-    headerBuffer.write('RP-Pin: $pin\r\n');
     headerBuffer.write('\r\n');
 
     // Combine headers and payload
@@ -269,57 +302,146 @@ class RegistrationService {
   }
 
   /// Parse registration response
-  RegistrationResult _parseRegistrationResponse(Uint8List data) {
+  RegistrationResult _parseRegistrationResponse(Uint8List data, bool isPS5) {
     try {
-      final response = utf8.decode(data);
-      final lines = response.split('\n');
+      final responseStr = utf8.decode(data, allowMalformed: true);
+      
+      // Find header/body split
+      final headerEndIndex = responseStr.indexOf('\r\n\r\n');
+      if (headerEndIndex < 0) {
+        return _fail('Invalid response format');
+      }
+      
+      final headerPart = responseStr.substring(0, headerEndIndex);
+      final lines = headerPart.split('\r\n');
 
       if (lines.isEmpty) {
         return _fail('Empty response');
       }
 
       final statusLine = lines.first.trim();
-      if (!statusLine.contains('200')) {
-        if (statusLine.contains('403')) {
+      
+      // Check status code
+      final statusMatch = RegExp(r'HTTP/\d\.\d\s+(\d+)').firstMatch(statusLine);
+      if (statusMatch == null) {
+        return _fail('Invalid HTTP response: $statusLine');
+      }
+      
+      final statusCode = statusMatch.group(1);
+      if (statusCode != '200') {
+        if (statusCode == '403') {
           return _fail('Registration denied. Check PIN and try again.');
+        }
+        // Try to get application reason
+        for (var line in lines) {
+          if (line.toLowerCase().startsWith('rp-application-reason:')) {
+            final reason = line.substring(line.indexOf(':') + 1).trim();
+            return _fail('Registration failed: $statusLine (Reason: $reason)');
+          }
         }
         return _fail('Registration failed: $statusLine');
       }
 
-      final headers = <String, String>{};
+      // Note: Content-Length is parsed from response but payload extraction
+      // uses actual data length for robustness
+
+      // Extract and decrypt payload for PS5
+      Uint8List payloadBytes;
+      final payloadStart = headerEndIndex + 4;
+      
+      if (payloadStart < data.length) {
+        payloadBytes = data.sublist(payloadStart);
+        
+        // Decrypt payload if PS5 and we have bright key
+        if (isPS5 && _bright != null && payloadBytes.isNotEmpty) {
+          payloadBytes = PS5RegistCrypto.decryptResponse(payloadBytes, _bright!);
+        }
+      } else {
+        payloadBytes = Uint8List(0);
+      }
+
+      // Parse decrypted payload as headers
+      final payloadStr = utf8.decode(payloadBytes, allowMalformed: true);
+      final payloadHeaders = <String, String>{};
+      
+      for (var line in payloadStr.split(RegExp(r'[\r\n]+'))) {
+        line = line.trim();
+        if (line.isEmpty) continue;
+
+        final colonIndex = line.indexOf(':');
+        if (colonIndex > 0) {
+          final key = line.substring(0, colonIndex).trim();
+          final value = line.substring(colonIndex + 1).trim();
+          payloadHeaders[key] = value;
+        }
+      }
+
+      // Also parse response headers
       for (var line in lines.skip(1)) {
         line = line.trim();
         if (line.isEmpty) continue;
 
         final colonIndex = line.indexOf(':');
         if (colonIndex > 0) {
-          final key = line.substring(0, colonIndex).toLowerCase();
+          final key = line.substring(0, colonIndex).trim();
           final value = line.substring(colonIndex + 1).trim();
-          headers[key] = value;
+          payloadHeaders[key] = value;
         }
       }
 
-      final rpRegistKey = headers['rp-registkey'];
-      final rpKeyStr = headers['rp-key'];
-      final rpKeyTypeStr = headers['rp-keytype'];
-      final serverMacStr = headers['rp-mac'];
-      final serverNickname = headers['rp-nickname'];
+      // Extract registration data
+      final registKeyName = isPS5 ? 'PS5-RegistKey' : 'PS4-RegistKey';
+      final macName = isPS5 ? 'PS5-Mac' : 'PS4-Mac';
+      final nicknameName = isPS5 ? 'PS5-Nickname' : 'PS4-Nickname';
+      
+      String? rpRegistKey = payloadHeaders[registKeyName];
+      final rpKeyStr = payloadHeaders['RP-Key'];
+      final rpKeyTypeStr = payloadHeaders['RP-KeyType'];
+      final serverMacStr = payloadHeaders[macName];
+      String? serverNickname = payloadHeaders[nicknameName];
 
       if (rpRegistKey == null || rpKeyStr == null) {
-        return _fail('Missing registration data in response');
+        // Try lowercase keys
+        for (var entry in payloadHeaders.entries) {
+          if (entry.key.toLowerCase() == registKeyName.toLowerCase()) {
+            rpRegistKey = entry.value;
+          }
+          if (entry.key.toLowerCase() == 'rp-key') {
+            // Already handled above
+          }
+        }
+        
+        if (rpRegistKey == null) {
+          return _fail('Missing registration key in response. Response: ${payloadStr.substring(0, payloadStr.length.clamp(0, 200))}');
+        }
+        if (rpKeyStr == null) {
+          return _fail('Missing RP-Key in response');
+        }
       }
 
-      // Decode RP key
-      final rpKey = base64.decode(rpKeyStr);
+      // Decode RP key (hex string to bytes)
+      List<int> rpKey;
+      try {
+        rpKey = _parseHexString(rpKeyStr);
+      } catch (e) {
+        // Try base64
+        try {
+          rpKey = base64.decode(rpKeyStr);
+        } catch (e2) {
+          return _fail('Invalid RP-Key format');
+        }
+      }
+      
       final rpKeyType = int.tryParse(rpKeyTypeStr ?? '0') ?? 0;
 
       // Parse MAC address
       List<int>? serverMac;
       if (serverMacStr != null) {
-        serverMac = serverMacStr
-            .split(':')
-            .map((s) => int.tryParse(s, radix: 16) ?? 0)
-            .toList();
+        try {
+          serverMac = _parseHexString(serverMacStr.replaceAll(':', ''));
+        } catch (e) {
+          // Ignore MAC parse errors
+        }
       }
 
       _emitEvent(RegistrationEventType.success);
@@ -335,6 +457,15 @@ class RegistrationService {
     } catch (e) {
       return _fail('Failed to parse response: $e');
     }
+  }
+
+  /// Parse hex string to bytes
+  List<int> _parseHexString(String hex) {
+    final bytes = <int>[];
+    for (int i = 0; i < hex.length; i += 2) {
+      bytes.add(int.parse(hex.substring(i, i + 2), radix: 16));
+    }
+    return bytes;
   }
 
   /// Cancel ongoing registration

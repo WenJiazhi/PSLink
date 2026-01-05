@@ -10,6 +10,7 @@ class PS5RegistCrypto {
   static const int aeropauseOffset1 = 0xc7;   // bytes 8-15
   static const int aeropauseOffset2 = 0x191;  // bytes 0-7
   static const int keyOffsetLocation = 0x18D;
+  static const int payloadSize = 0x400; // 1024 bytes
 
   /// ps5_keys_1 array (512 bytes) - from chiaki-ng rpcrypt.c
   static const List<int> ps5Keys1 = [
@@ -47,6 +48,42 @@ class PS5RegistCrypto {
     0xee, 0xb8, 0x11, 0x47, 0xfb, 0xa9, 0x1b, 0xc7, 0x40, 0xc6, 0xe1, 0x19, 0x6d, 0x50, 0xa1, 0x2a,
   ];
 
+  /// ps5_keys_0 array for bright calculation (512 bytes)
+  static const List<int> ps5Keys0 = [
+    0x32, 0x52, 0x4a, 0x65, 0x44, 0x56, 0xd6, 0x7d, 0x2e, 0x1c, 0x55, 0xf0, 0xca, 0x0c, 0x98, 0xe5,
+    0x6b, 0xad, 0x0a, 0x0c, 0x45, 0x4e, 0x3e, 0x4d, 0xa6, 0x7d, 0xf4, 0xa0, 0x21, 0x54, 0xcc, 0x29,
+    0xe1, 0x4f, 0x4b, 0x09, 0xca, 0x93, 0xfd, 0x22, 0x11, 0xf7, 0xfc, 0xea, 0x38, 0x98, 0xe4, 0x6c,
+    0xfd, 0x7b, 0x2d, 0xf4, 0xc8, 0xf2, 0x67, 0x5f, 0x9d, 0x18, 0x36, 0x48, 0xe9, 0x0c, 0xd6, 0xaf,
+    0x12, 0xce, 0x2f, 0x7b, 0xdb, 0x6c, 0xe6, 0xb4, 0x15, 0x76, 0x6b, 0x03, 0x38, 0xed, 0x50, 0x72,
+    0x2e, 0xc8, 0x0b, 0xda, 0x97, 0x51, 0x59, 0xde, 0x27, 0x15, 0x02, 0x91, 0x30, 0x07, 0x45, 0x4a,
+    0x57, 0x0f, 0xd0, 0x2e, 0x76, 0x91, 0x49, 0x3e, 0x99, 0x1b, 0x7a, 0x2a, 0xe8, 0x69, 0x52, 0x43,
+    0x4a, 0x9a, 0xfa, 0xf3, 0xc3, 0x24, 0x8f, 0xbe, 0x64, 0xd6, 0x47, 0xab, 0xbc, 0x42, 0x67, 0x6e,
+    0xbb, 0xce, 0x22, 0x0a, 0x5c, 0x71, 0xe6, 0xf1, 0x11, 0x5e, 0x36, 0x73, 0x57, 0x4e, 0x3f, 0x64,
+    0x1e, 0x5b, 0xec, 0xbe, 0xc3, 0x2a, 0x87, 0xe7, 0xca, 0x4a, 0xa1, 0x17, 0x71, 0x7d, 0xd0, 0x70,
+    0x6c, 0xbd, 0x27, 0x51, 0x0e, 0x2f, 0x80, 0xab, 0xb4, 0x65, 0xa9, 0x4e, 0xac, 0x5b, 0x14, 0x4b,
+    0xd3, 0xd2, 0x0c, 0x06, 0x28, 0x4e, 0x81, 0x1c, 0x50, 0xa5, 0x2a, 0xc4, 0xca, 0xd4, 0x47, 0x37,
+    0x5c, 0x09, 0x4c, 0x57, 0x82, 0x23, 0x4b, 0xf8, 0x9b, 0xf8, 0x4b, 0xf1, 0x8e, 0x7e, 0xab, 0x39,
+    0x3e, 0xf0, 0xf9, 0xba, 0xf0, 0xb4, 0x55, 0x22, 0x9e, 0x3f, 0x6e, 0x38, 0x66, 0xf8, 0x64, 0xc2,
+    0x93, 0xc9, 0x14, 0x63, 0xb2, 0x34, 0x98, 0x93, 0x09, 0x3c, 0x49, 0x09, 0xe8, 0x09, 0x58, 0xb5,
+    0x03, 0xbf, 0x47, 0xf9, 0x95, 0x22, 0x7d, 0x9b, 0x3c, 0x19, 0x3f, 0xb3, 0x62, 0xeb, 0xa2, 0x13,
+    0x0e, 0xf9, 0x09, 0xf1, 0xc8, 0x16, 0xfa, 0x6f, 0xa5, 0x8f, 0x2b, 0x2f, 0x5a, 0x8a, 0x66, 0x01,
+    0x97, 0x88, 0xa5, 0x4f, 0xae, 0x47, 0x7e, 0x2d, 0xc8, 0x8e, 0x8c, 0x82, 0x8c, 0xf1, 0xbb, 0x5b,
+    0xd4, 0x19, 0x5d, 0x61, 0x4b, 0x4a, 0xf2, 0xbd, 0x69, 0x1c, 0x45, 0x51, 0x23, 0xf9, 0x50, 0x92,
+    0x89, 0x2d, 0x37, 0x52, 0x85, 0xb6, 0x5b, 0xdd, 0x1e, 0x99, 0x51, 0xcc, 0xb6, 0xf7, 0x03, 0x95,
+    0x0f, 0x93, 0xe4, 0xde, 0x37, 0x89, 0x1a, 0x56, 0x94, 0x79, 0x98, 0x5f, 0xf7, 0x77, 0x47, 0xa0,
+    0x69, 0x1d, 0x67, 0x93, 0x3b, 0x5f, 0xc9, 0x7c, 0xdb, 0x8f, 0xb0, 0x15, 0x6a, 0x7b, 0x05, 0x26,
+    0x0d, 0x7f, 0xeb, 0x06, 0x98, 0xc5, 0xb3, 0xd4, 0x6f, 0x4e, 0xc2, 0xc3, 0xea, 0x36, 0xdf, 0x85,
+    0xfc, 0xbb, 0x93, 0x0a, 0xfb, 0x16, 0x8a, 0x7d, 0x9e, 0x97, 0x2f, 0x05, 0x9f, 0x6c, 0x4e, 0x69,
+    0xb2, 0x3c, 0x1d, 0x1d, 0xf9, 0xab, 0x93, 0x9e, 0xbd, 0x53, 0x37, 0x4e, 0x6e, 0xfe, 0xf1, 0x77,
+    0xc9, 0xb7, 0xa0, 0xef, 0xfa, 0xc6, 0x96, 0x8c, 0xd7, 0xb7, 0x0f, 0xa5, 0x62, 0x81, 0x3a, 0x6c,
+    0xea, 0x38, 0x26, 0xd7, 0x7b, 0x69, 0x91, 0xd5, 0xd9, 0x2d, 0x4a, 0x2e, 0xb7, 0x81, 0x68, 0x8a,
+    0xab, 0x81, 0xf2, 0x08, 0xbd, 0x3c, 0x89, 0x3e, 0xc9, 0x35, 0x69, 0x28, 0xf2, 0x8a, 0xb3, 0x1e,
+    0x3f, 0x93, 0x6f, 0xbc, 0xeb, 0x7e, 0x65, 0x05, 0x7a, 0x91, 0x6c, 0x6f, 0x59, 0x79, 0x0f, 0xb9,
+    0xb1, 0x14, 0x37, 0xa7, 0x53, 0x21, 0x2d, 0xa6, 0x2a, 0x16, 0x7e, 0x56, 0x7a, 0x8c, 0x48, 0x62,
+    0xa5, 0xa6, 0x8e, 0x68, 0xc8, 0x2b, 0x4c, 0x95, 0xab, 0x81, 0x95, 0x09, 0x86, 0xf3, 0xf4, 0x85,
+    0x47, 0x49, 0x1b, 0x59, 0x3f, 0x4a, 0x0a, 0x36, 0x22, 0x91, 0x3c, 0x51, 0x87, 0x8b, 0x68, 0x2e,
+  ];
+
   /// echo_b constant (16 bytes)
   static const List<int> echoB = [
     0xe1, 0xec, 0x9c, 0x3a, 0xdd, 0xbd, 0x08, 0x85,
@@ -57,7 +94,41 @@ class PS5RegistCrypto {
   static const String ps5ClientType =
     'dabfa2ec873de5839bee8d3f4c0239c4282c07c25c6077a2931afcf0adc0d34f';
 
-  /// Calculate aeropause from ambassador key
+  /// Generate random bytes for ambassador/nonce
+  static Uint8List generateRandomBytes(int length) {
+    final random = Random.secure();
+    final bytes = Uint8List(length);
+    for (int i = 0; i < length; i++) {
+      bytes[i] = random.nextInt(256);
+    }
+    return bytes;
+  }
+
+  /// Calculate bright key from ambassador and PIN for PS5
+  /// Based on chiaki_rpcrypt_init_regist
+  static Uint8List calculateBright(Uint8List ambassador, int keyOffset, int pin) {
+    final bright = Uint8List(16);
+    
+    // Convert PIN to bytes (little-endian)
+    final pinBytes = Uint8List(4);
+    pinBytes[0] = pin & 0xFF;
+    pinBytes[1] = (pin >> 8) & 0xFF;
+    pinBytes[2] = (pin >> 16) & 0xFF;
+    pinBytes[3] = (pin >> 24) & 0xFF;
+    
+    // Calculate bright using ps5_keys_0 and PIN
+    for (int i = 0; i < 16; i++) {
+      // ps5_keys_0 is 16x32 matrix, indexed by [row=i][column=keyOffset]
+      final k = ps5Keys0[i * 0x20 + keyOffset];
+      // XOR with ambassador and add PIN contribution
+      bright[i] = (ambassador[i] ^ k ^ pinBytes[i % 4]) & 0xFF;
+    }
+    
+    return bright;
+  }
+
+  /// Calculate aeropause from ambassador key for PS5
+  /// Based on chiaki_rpcrypt_aeropause
   /// wurzelbert = -0x2d = 0xd3 in unsigned 8-bit
   static Uint8List calculateAeropause(Uint8List ambassador, int keyOffset) {
     final aeropause = Uint8List(16);
@@ -73,43 +144,47 @@ class PS5RegistCrypto {
     return aeropause;
   }
 
-  /// Generate random bytes for ambassador/nonce
-  static Uint8List generateRandomBytes(int length) {
-    final random = Random.secure();
-    final bytes = Uint8List(length);
-    for (int i = 0; i < length; i++) {
-      bytes[i] = random.nextInt(256);
+  /// XOR encrypt/decrypt data using bright key (simple XOR cipher)
+  /// For PS5 registration, the inner header is XOR encrypted with the bright key
+  static Uint8List xorEncrypt(Uint8List data, Uint8List key) {
+    final result = Uint8List(data.length);
+    for (int i = 0; i < data.length; i++) {
+      result[i] = data[i] ^ key[i % key.length];
     }
-    return bytes;
+    return result;
   }
 
-  /// Build the registration payload for PS5
+  /// Build the complete registration payload for PS5
   /// Returns the complete payload ready to send
-  static Uint8List buildRegistrationPayload({
+  static RegistrationPayloadResult buildRegistrationPayload({
     required String psnAccountId,
     required String psnOnlineId,
-    required String pin,
+    required int pin,
   }) {
-    // Create buffer and fill with 'A' (0x41)
-    final buffer = Uint8List(0x400); // 1024 bytes buffer
+    // Create buffer and fill with random data (like chiaki does with 'A')
+    final buffer = Uint8List(payloadSize);
+    final random = Random.secure();
     for (int i = 0; i < innerHeaderOffset; i++) {
-      buffer[i] = 0x41; // 'A'
+      buffer[i] = random.nextInt(256);
     }
 
     // Generate random ambassador key (16 bytes)
     final ambassador = generateRandomBytes(16);
 
-    // Copy ambassador to specific location in buffer (for key derivation)
-    // The buffer itself contains random data that determines key offsets
+    // Copy ambassador to the beginning of buffer
     for (int i = 0; i < 16; i++) {
       buffer[i] = ambassador[i];
     }
 
-    // Calculate key offset from buffer
-    final keyOffset = buffer[keyOffsetLocation] & 0x1F; // 0-31
+    // Calculate key offsets from buffer
+    final key0Offset = buffer[keyOffsetLocation] & 0x1F; // 0-31
+    final key1Offset = buffer[0] >> 3; // Upper 5 bits of first byte
+
+    // Calculate bright key using PIN
+    final bright = calculateBright(ambassador, key0Offset, pin);
 
     // Calculate aeropause
-    final aeropause = calculateAeropause(ambassador, keyOffset);
+    final aeropause = calculateAeropause(ambassador, key1Offset);
 
     // Place aeropause bytes at specific offsets
     // bytes 8-15 go to offset 0xc7
@@ -121,54 +196,46 @@ class PS5RegistCrypto {
       buffer[aeropauseOffset2 + i] = aeropause[i];
     }
 
-    // Build inner header at offset 0x1e0
-    final innerHeader = _buildInnerHeader(
-      psnAccountId: psnAccountId,
-      psnOnlineId: psnOnlineId,
-      pin: pin,
-    );
+    // Build inner header content
+    final innerHeader = StringBuffer();
+    innerHeader.write('Client-Type:$ps5ClientType\n');
+    innerHeader.write('Np-AccountId:$psnAccountId\n');
+    
+    final innerHeaderBytes = utf8.encode(innerHeader.toString());
+    
+    // Encrypt inner header with bright key
+    final encryptedHeader = xorEncrypt(Uint8List.fromList(innerHeaderBytes), bright);
 
-    // Copy inner header to buffer
-    final headerBytes = utf8.encode(innerHeader);
-    for (int i = 0; i < headerBytes.length && (innerHeaderOffset + i) < buffer.length; i++) {
-      buffer[innerHeaderOffset + i] = headerBytes[i];
+    // Copy encrypted inner header to buffer at offset 0x1e0
+    for (int i = 0; i < encryptedHeader.length && (innerHeaderOffset + i) < buffer.length; i++) {
+      buffer[innerHeaderOffset + i] = encryptedHeader[i];
     }
 
-    // Return the payload (size depends on inner header)
-    // For now, return fixed size that includes inner header
-    final payloadSize = innerHeaderOffset + headerBytes.length;
-    return buffer.sublist(0, payloadSize);
+    // Calculate actual payload size
+    final actualPayloadSize = innerHeaderOffset + encryptedHeader.length;
+
+    return RegistrationPayloadResult(
+      payload: buffer.sublist(0, actualPayloadSize),
+      bright: bright,
+      ambassador: ambassador,
+    );
   }
 
-  /// Build inner header content
-  static String _buildInnerHeader({
-    required String psnAccountId,
-    required String psnOnlineId,
-    required String pin,
-  }) {
-    // Format based on chiaki-ng implementation
-    final sb = StringBuffer();
-    sb.write('Client-Type:$ps5ClientType\n');
-    sb.write('Np-AccountId:$psnAccountId\n');
-    sb.write('RP-PSN-ID:$psnOnlineId\n');
-    sb.write('RP-Pin:$pin\n');
-    return sb.toString();
+  /// Decrypt registration response payload
+  static Uint8List decryptResponse(Uint8List data, Uint8List bright) {
+    return xorEncrypt(data, bright);
   }
+}
 
-  /// Alternative: Build minimal registration payload
-  /// This is a simpler approach that may work for basic registration
-  static Uint8List buildMinimalPayload({
-    required String psnAccountId,
-    required String psnOnlineId,
-    required String pin,
-  }) {
-    // Build a simpler payload format
-    final content = StringBuffer();
-    content.write('Client-Type:$ps5ClientType\n');
-    content.write('Np-AccountId:$psnAccountId\n');
-    content.write('RP-PSN-ID:$psnOnlineId\n');
-    content.write('RP-Pin:$pin\n');
+/// Result of building registration payload
+class RegistrationPayloadResult {
+  final Uint8List payload;
+  final Uint8List bright;
+  final Uint8List ambassador;
 
-    return Uint8List.fromList(utf8.encode(content.toString()));
-  }
+  RegistrationPayloadResult({
+    required this.payload,
+    required this.bright,
+    required this.ambassador,
+  });
 }

@@ -49,6 +49,7 @@ class DiscoveryService {
       );
     } catch (e) {
       _isDiscovering = false;
+      debugPrint('Discovery: Failed to start: $e');
       rethrow;
     }
   }
@@ -66,6 +67,7 @@ class DiscoveryService {
 
   /// Bind to an available port in the discovery range (9303-9319)
   Future<RawDatagramSocket> _bindToAvailablePort() async {
+    // Try specific ports first
     for (int port = PSConstants.discoveryPortLocalMin;
         port <= PSConstants.discoveryPortLocalMax;
         port++) {
@@ -74,6 +76,7 @@ class DiscoveryService {
           InternetAddress.anyIPv4,
           port,
           reuseAddress: true,
+          reusePort: true,
         );
       } catch (e) {
         debugPrint('Discovery: Port $port in use, trying next');
@@ -112,6 +115,15 @@ class DiscoveryService {
               255,
             ]);
             addresses.add(InternetAddress.fromRawAddress(broadcastBytes));
+            
+            // Also try /16 subnet broadcast for larger networks
+            final broadcast16 = Uint8List.fromList([
+              ipBytes[0],
+              ipBytes[1],
+              255,
+              255,
+            ]);
+            addresses.add(InternetAddress.fromRawAddress(broadcast16));
           }
         }
       }
@@ -123,7 +135,9 @@ class DiscoveryService {
     // Always add general broadcast as fallback
     addresses.add(InternetAddress('255.255.255.255'));
 
-    return addresses;
+    // Remove duplicates
+    final seen = <String>{};
+    return addresses.where((addr) => seen.add(addr.address)).toList();
   }
 
   /// Send discovery broadcast packets to both PS4 and PS5
@@ -136,10 +150,12 @@ class DiscoveryService {
 
     for (var addr in broadcastAddresses) {
       try {
-        // Send PS4 discovery packet
+        // Send PS4 discovery packet to port 987
         _socket!.send(ps4Packet, addr, PSConstants.discoveryPortPS4);
-        // Send PS5 discovery packet
+        // Send PS5 discovery packet to port 9302
         _socket!.send(ps5Packet, addr, PSConstants.discoveryPortPS5);
+        
+        debugPrint('Discovery: Sent packets to ${addr.address}');
       } catch (e) {
         debugPrint('Discovery: Failed to send packet to $addr: $e');
         // Ignore send errors for individual addresses
@@ -182,17 +198,15 @@ class DiscoveryService {
       final ps4Packet = _buildSearchPacket(PSConstants.protocolVersionPS4);
       final ps5Packet = _buildSearchPacket(PSConstants.protocolVersionPS5);
 
-      // Send packets directly to the target IP
-      probeSocket.send(ps4Packet, targetAddr, PSConstants.discoveryPortPS4);
-      probeSocket.send(ps5Packet, targetAddr, PSConstants.discoveryPortPS5);
-
-      // Also try with slight delay
-      await Future.delayed(const Duration(milliseconds: 100));
-      probeSocket.send(ps4Packet, targetAddr, PSConstants.discoveryPortPS4);
-      probeSocket.send(ps5Packet, targetAddr, PSConstants.discoveryPortPS5);
+      // Send packets directly to the target IP multiple times for reliability
+      for (int i = 0; i < 3; i++) {
+        probeSocket.send(ps4Packet, targetAddr, PSConstants.discoveryPortPS4);
+        probeSocket.send(ps5Packet, targetAddr, PSConstants.discoveryPortPS5);
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
 
       // Set timeout
-      timeout = Timer(const Duration(seconds: 3), () {
+      timeout = Timer(const Duration(seconds: 5), () {
         if (!completer.isCompleted) {
           completer.complete(null);
         }
@@ -227,6 +241,7 @@ class DiscoveryService {
       if (host != null) {
         _discoveredHosts[host.hostId] = host;
         _hostController.add(host);
+        debugPrint('Discovery: Found ${host.hostName} at ${host.hostAddress}');
       }
     } catch (e) {
       debugPrint('Discovery: Failed to parse response: $e');
