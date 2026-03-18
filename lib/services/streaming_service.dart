@@ -53,6 +53,7 @@ class StreamStats {
 class StreamingService {
   static const _sessionHeaderLength = 8;
   static const _osType = 'Win10.0.0';
+  static const _dataAckAdvanceBy = 29;
   static final Uint8List _didPrefix = Uint8List.fromList([
     0x00,
     0x18,
@@ -799,6 +800,7 @@ class StreamingService {
               tsn: packet.tsn!,
             ),
             cipher: _streamCipher,
+            advanceBy: _streamCipher == null ? null : _dataAckAdvanceBy,
           );
         }
         if (packet.data != null) {
@@ -929,7 +931,7 @@ class StreamingService {
   }
 
   void _maybeCompleteStreamReady() {
-    if (_streamCipher == null || _videoAssembler == null || _audioAssembler == null) {
+    if (_streamCipher == null) {
       return;
     }
     final completer = _streamReadyCompleter;
@@ -1011,9 +1013,10 @@ class StreamingService {
     required bool encryptPayload,
     required int advanceBy,
   }) {
+    final tsn = _streamCipher == null ? _streamTsn : _nextTsn();
     final packet = RpControlPacket.data(
       tagRemote: _streamRemoteTag,
-      tsn: _nextTsn(),
+      tsn: tsn,
       flag: 1,
       channel: channel,
       data: payload,
