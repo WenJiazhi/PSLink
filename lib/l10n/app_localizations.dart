@@ -1,13 +1,11 @@
-/// PSLink - PlayStation Remote Play 串流客户端
-/// 本地化字符串
+/// Minimal in-app localized strings.
 class AppLocalizations {
-  final String locale;
+  const AppLocalizations(this.locale);
 
-  AppLocalizations(this.locale);
+  final String locale;
 
   static const Map<String, Map<String, String>> _localizedStrings = {
     'en': {
-      // 通用
       'appName': 'PSLink',
       'appDescription': 'PlayStation Remote Play Client',
       'ok': 'OK',
@@ -19,13 +17,9 @@ class AppLocalizations {
       'loading': 'Loading...',
       'error': 'Error',
       'success': 'Success',
-
-      // 导航
       'devices': 'Devices',
       'settings': 'Settings',
       'about': 'About',
-
-      // 设备
       'noDevices': 'No devices found',
       'searchDevices': 'Search Devices',
       'searching': 'Searching...',
@@ -37,17 +31,13 @@ class AppLocalizations {
       'registerDevice': 'Register',
       'forgetDevice': 'Forget Device',
       'renameDevice': 'Rename',
-
-      // 注册
       'registration': 'Registration',
       'enterPin': 'Enter the 8-digit PIN shown on your PlayStation',
       'pinHint': '8-digit PIN',
       'registering': 'Registering...',
-      'registrationSuccess': 'Registration successful!',
+      'registrationSuccess': 'Registration successful',
       'registrationFailed': 'Registration failed',
       'invalidPin': 'Invalid PIN format',
-
-      // 串流
       'connecting': 'Connecting...',
       'connected': 'Connected',
       'disconnected': 'Disconnected',
@@ -55,8 +45,6 @@ class AppLocalizations {
       'latency': 'Latency',
       'fps': 'FPS',
       'bitrate': 'Bitrate',
-
-      // 设置
       'videoSettings': 'Video Settings',
       'resolution': 'Resolution',
       'frameRate': 'Frame Rate',
@@ -70,15 +58,12 @@ class AppLocalizations {
       'enableHDR': 'Enable HDR',
       'enableHaptics': 'Enable Haptic Feedback',
       'enableAdaptiveTriggers': 'Enable Adaptive Triggers',
-
-      // 关于
       'version': 'Version',
       'openSource': 'Open Source',
       'licenses': 'Licenses',
       'github': 'GitHub',
     },
     'zh': {
-      // 通用
       'appName': 'PSLink',
       'appDescription': 'PlayStation 远程串流客户端',
       'ok': '确定',
@@ -90,13 +75,9 @@ class AppLocalizations {
       'loading': '加载中...',
       'error': '错误',
       'success': '成功',
-
-      // 导航
       'devices': '设备',
       'settings': '设置',
       'about': '关于',
-
-      // 设备
       'noDevices': '未发现设备',
       'searchDevices': '搜索设备',
       'searching': '搜索中...',
@@ -108,17 +89,13 @@ class AppLocalizations {
       'registerDevice': '注册',
       'forgetDevice': '忘记设备',
       'renameDevice': '重命名',
-
-      // 注册
       'registration': '注册设备',
-      'enterPin': '请输入 PlayStation 上显示的 8 位 PIN 码',
+      'enterPin': '请输入 PlayStation 屏幕上显示的 8 位 PIN 码',
       'pinHint': '8 位 PIN 码',
       'registering': '注册中...',
-      'registrationSuccess': '注册成功！',
+      'registrationSuccess': '注册成功',
       'registrationFailed': '注册失败',
-      'invalidPin': 'PIN 码格式错误',
-
-      // 串流
+      'invalidPin': 'PIN 码格式不正确',
       'connecting': '连接中...',
       'connected': '已连接',
       'disconnected': '已断开',
@@ -126,8 +103,6 @@ class AppLocalizations {
       'latency': '延迟',
       'fps': '帧率',
       'bitrate': '码率',
-
-      // 设置
       'videoSettings': '视频设置',
       'resolution': '分辨率',
       'frameRate': '帧率',
@@ -141,8 +116,6 @@ class AppLocalizations {
       'enableHDR': '启用 HDR',
       'enableHaptics': '启用触觉反馈',
       'enableAdaptiveTriggers': '启用自适应扳机',
-
-      // 关于
       'version': '版本',
       'openSource': '开源协议',
       'licenses': '许可证',
@@ -152,11 +125,10 @@ class AppLocalizations {
 
   String get(String key) {
     return _localizedStrings[locale]?[key] ??
-           _localizedStrings['en']?[key] ??
-           key;
+        _localizedStrings['en']?[key] ??
+        key;
   }
 
-  // 便捷访问器
   String get appName => get('appName');
   String get appDescription => get('appDescription');
   String get ok => get('ok');

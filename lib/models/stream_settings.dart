@@ -1,4 +1,4 @@
-/// 串流设置模型
+/// Remote Play stream settings.
 class StreamSettings {
   final String resolution;
   final int frameRate;
@@ -72,7 +72,8 @@ class StreamSettings {
       bitrate: bitrate ?? this.bitrate,
       enableHDR: enableHDR ?? this.enableHDR,
       enableHaptics: enableHaptics ?? this.enableHaptics,
-      enableAdaptiveTriggers: enableAdaptiveTriggers ?? this.enableAdaptiveTriggers,
+      enableAdaptiveTriggers:
+          enableAdaptiveTriggers ?? this.enableAdaptiveTriggers,
       controllerOpacity: controllerOpacity ?? this.controllerOpacity,
       showControllerAlways: showControllerAlways ?? this.showControllerAlways,
       audioLatency: audioLatency ?? this.audioLatency,

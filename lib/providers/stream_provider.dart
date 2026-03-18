@@ -1,23 +1,22 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
+import '../models/controller_state.dart';
 import '../models/ps_device.dart';
 import '../models/stream_settings.dart';
-import '../models/controller_state.dart';
-import '../services/streaming_service.dart';
 import '../services/storage_service.dart';
+import '../services/streaming_service.dart';
 
-/// 串流状态管理 Provider
-class StreamProvider extends ChangeNotifier {
+class PSStreamProvider extends ChangeNotifier {
+  PSStreamProvider(this._storageService);
+
   final StreamingService _streamingService = StreamingService();
   final StorageService _storageService;
 
-  StreamProvider(this._storageService);
-
-  // 订阅
   StreamSubscription? _stateSubscription;
   StreamSubscription? _statsSubscription;
 
-  // 状态
   SessionState _sessionState = SessionState.disconnected;
   StreamSettings _settings = const StreamSettings();
   StreamStats? _stats;
@@ -25,25 +24,21 @@ class StreamProvider extends ChangeNotifier {
   String? _error;
   bool _showController = false;
 
-  // Getters
   SessionState get sessionState => _sessionState;
   StreamSettings get settings => _settings;
   StreamStats? get stats => _stats;
   ControllerState get controllerState => _controllerState;
   String? get error => _error;
   bool get showController => _showController;
+  String? get videoStreamUrl => _streamingService.videoStreamUrl;
   bool get isConnected => _sessionState == SessionState.streaming;
   bool get isConnecting =>
       _sessionState == SessionState.connecting ||
       _sessionState == SessionState.authenticating;
 
-  /// 视频流
   Stream<Uint8List> get videoStream => _streamingService.videoStream;
-
-  /// 音频流
   Stream<Uint8List> get audioStream => _streamingService.audioStream;
 
-  /// 初始化
   void initialize() {
     _settings = _storageService.getSettings();
 
@@ -63,22 +58,18 @@ class StreamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 开始串流
   Future<bool> startStreaming(PSDevice device) async {
     _error = null;
     notifyListeners();
 
     final success = await _streamingService.startSession(device, _settings);
-
     if (!success) {
       _error = _streamingService.lastError;
       notifyListeners();
     }
-
     return success;
   }
 
-  /// 停止串流
   Future<void> stopStreaming() async {
     await _streamingService.stopSession();
     _stats = null;
@@ -86,28 +77,24 @@ class StreamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 更新控制器状态
   void updateControllerState(ControllerState state) {
     _controllerState = state;
     _streamingService.sendControllerInput(state);
     notifyListeners();
   }
 
-  /// 按下按钮
   void pressButton(String button) {
     _controllerState = _setButtonState(_controllerState, button, true);
     _streamingService.sendControllerInput(_controllerState);
     notifyListeners();
   }
 
-  /// 释放按钮
   void releaseButton(String button) {
     _controllerState = _setButtonState(_controllerState, button, false);
     _streamingService.sendControllerInput(_controllerState);
     notifyListeners();
   }
 
-  /// 更新摇杆
   void updateStick(String stick, double x, double y) {
     if (stick == 'left') {
       _controllerState = _controllerState.copyWith(
@@ -124,7 +111,6 @@ class StreamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 更新触发器
   void updateTrigger(String trigger, double value) {
     if (trigger == 'l2') {
       _controllerState = _controllerState.copyWith(l2: value);
@@ -135,13 +121,11 @@ class StreamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 切换控制器显示
   void toggleController() {
     _showController = !_showController;
     notifyListeners();
   }
 
-  /// 更新设置
   Future<void> updateSettings(StreamSettings newSettings) async {
     _settings = newSettings;
     await _storageService.saveSettings(newSettings);
@@ -149,33 +133,32 @@ class StreamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 更新分辨率
   Future<void> setResolution(String resolution) async {
     await updateSettings(_settings.copyWith(resolution: resolution));
   }
 
-  /// 更新帧率
   Future<void> setFrameRate(int frameRate) async {
     await updateSettings(_settings.copyWith(frameRate: frameRate));
   }
 
-  /// 更新码率
   Future<void> setBitrate(int bitrate) async {
     await updateSettings(_settings.copyWith(bitrate: bitrate));
   }
 
-  /// 设置控制器透明度
   Future<void> setControllerOpacity(double opacity) async {
     await updateSettings(_settings.copyWith(controllerOpacity: opacity));
   }
 
-  /// 清除错误
   void clearError() {
     _error = null;
     notifyListeners();
   }
 
-  ControllerState _setButtonState(ControllerState state, String button, bool pressed) {
+  ControllerState _setButtonState(
+    ControllerState state,
+    String button,
+    bool pressed,
+  ) {
     switch (button) {
       case 'cross':
         return state.copyWith(cross: pressed);

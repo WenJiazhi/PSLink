@@ -1,57 +1,16 @@
-import 'package:hive/hive.dart';
-
-part 'ps_device.g.dart';
-
-/// PlayStation 设备状态
 enum PSDeviceState {
-  ready,      // 就绪可连接
-  standby,    // 待机模式
-  unknown,    // 未知状态
+  ready,
+  standby,
+  unknown,
 }
 
-/// PlayStation 设备类型
 enum PSDeviceType {
   ps4,
   ps5,
 }
 
-/// PlayStation 设备模型
-@HiveType(typeId: 0)
 class PSDevice {
-  @HiveField(0)
-  final String hostId;
-
-  @HiveField(1)
-  final String hostName;
-
-  @HiveField(2)
-  final String ipAddress;
-
-  @HiveField(3)
-  final int port;
-
-  @HiveField(4)
-  final String systemVersion;
-
-  @HiveField(5)
-  final int deviceTypeValue;
-
-  @HiveField(6)
-  final int stateValue;
-
-  @HiveField(7)
-  final String? registKey;
-
-  @HiveField(8)
-  final String? rpKey;
-
-  @HiveField(9)
-  final DateTime? lastConnected;
-
-  @HiveField(10)
-  final String? nickname;
-
-  PSDevice({
+  const PSDevice({
     required this.hostId,
     required this.hostName,
     required this.ipAddress,
@@ -64,6 +23,18 @@ class PSDevice {
     this.lastConnected,
     this.nickname,
   });
+
+  final String hostId;
+  final String hostName;
+  final String ipAddress;
+  final int port;
+  final String systemVersion;
+  final int deviceTypeValue;
+  final int stateValue;
+  final String? registKey;
+  final String? rpKey;
+  final DateTime? lastConnected;
+  final String? nickname;
 
   PSDeviceType get deviceType =>
       deviceTypeValue == 0 ? PSDeviceType.ps4 : PSDeviceType.ps5;
@@ -160,28 +131,22 @@ class PSDevice {
     );
   }
 
-  /// 从发现响应解析设备
   factory PSDevice.fromDiscoveryResponse(
     String ipAddress,
     Map<String, String> headers,
   ) {
     final statusCode = int.tryParse(headers['status-code'] ?? '') ?? 0;
-    int stateValue;
-    switch (statusCode) {
-      case 200:
-        stateValue = 0; // ready
-        break;
-      case 620:
-        stateValue = 1; // standby
-        break;
-      default:
-        stateValue = 2; // unknown
-    }
+    final stateValue = switch (statusCode) {
+      200 => 0,
+      620 => 1,
+      _ => 2,
+    };
 
-    // 判断设备类型
     final systemVersion = headers['system-version'] ?? '';
-    final isPS5 = systemVersion.startsWith('0') ||
-                  headers['host-type']?.contains('PS5') == true;
+    final hostType = (headers['host-type'] ?? '').toUpperCase();
+    final isPS5 =
+        hostType.contains('PS5') ||
+        (hostType.isEmpty && systemVersion.startsWith('04.'));
 
     return PSDevice(
       hostId: headers['host-id'] ?? '',
@@ -201,7 +166,9 @@ class PSDevice {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     return other is PSDevice && other.hostId == hostId;
   }
 

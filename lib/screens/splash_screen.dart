@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import '../core/theme.dart';
+
 import '../core/constants.dart';
 
-/// 启动页面
-/// 显示 PSLink logo 和加载动画，初始化服务后跳转到主页
 class SplashScreen extends StatefulWidget {
-  final VoidCallback onInitComplete;
-
   const SplashScreen({
     super.key,
     required this.onInitComplete,
   });
+
+  final VoidCallback onInitComplete;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -26,38 +24,31 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // 初始化动画
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0, 0.6, curve: Curves.easeOut),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+        curve: const Interval(0, 0.6, curve: Curves.easeOutBack),
       ),
     );
 
-    // 启动动画
     _animationController.forward();
-
-    // 模拟初始化过程
     _initialize();
   }
 
   Future<void> _initialize() async {
-    // 等待动画完成
     await Future.delayed(const Duration(milliseconds: 2000));
-
-    // 调用初始化完成回调
     if (mounted) {
       widget.onInitComplete();
     }
@@ -78,9 +69,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(AppColors.backgroundColor),
-              Color(AppColors.primaryColor).withOpacity(0.3),
-              Color(AppColors.backgroundColor),
+              const Color(AppColors.backgroundColor),
+              const Color(AppColors.primaryColor).withValues(alpha: 0.3),
+              const Color(AppColors.backgroundColor),
             ],
           ),
         ),
@@ -99,32 +90,25 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // PSLink Logo
                 _buildLogo(),
                 const SizedBox(height: 32),
-
-                // App 名称
                 Text(
                   'PSLink',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Color(AppColors.textPrimary),
+                        color: const Color(AppColors.textPrimary),
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
                       ),
                 ),
                 const SizedBox(height: 8),
-
-                // 副标题
                 Text(
                   'PlayStation Remote Play',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Color(AppColors.textSecondary),
+                        color: const Color(AppColors.textSecondary),
                         letterSpacing: 1,
                       ),
                 ),
                 const SizedBox(height: 48),
-
-                // 加载指示器
                 _buildLoadingIndicator(),
               ],
             ),
@@ -139,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -150,14 +134,14 @@ class _SplashScreenState extends State<SplashScreen>
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Color(AppColors.accentColor).withOpacity(0.5),
+            color: const Color(AppColors.accentColor).withValues(alpha: 0.5),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Center(
+      child: const Center(
         child: Icon(
           Icons.sports_esports,
           size: 64,
@@ -168,14 +152,12 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildLoadingIndicator() {
-    return SizedBox(
+    return const SizedBox(
       width: 40,
       height: 40,
       child: CircularProgressIndicator(
         strokeWidth: 3,
-        valueColor: AlwaysStoppedAnimation<Color>(
-          Color(AppColors.accentColor),
-        ),
+        color: Color(AppColors.accentColor),
       ),
     );
   }

@@ -21,6 +21,8 @@ dependencies:
 
   # Video/Audio streaming
   flutter_vlc_player: ^7.4.2
+  flutter_opus: ^1.0.4
+  flutter_pcm_sound: ^3.3.3
 
   # Storage
   shared_preferences: ^2.3.3

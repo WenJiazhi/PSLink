@@ -11,7 +11,6 @@ import 'models/ps_device.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 初始化存储服务
   final storageService = StorageService();
   await storageService.initialize();
 
@@ -30,13 +29,11 @@ class PSLinkApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // 设备状态管理
         ChangeNotifierProvider(
-          create: (_) => DeviceProvider(storageService),
+          create: (_) => DeviceProvider(storageService)..initialize(),
         ),
-        // 串流状态管理
         ChangeNotifierProvider(
-          create: (_) => StreamProvider(storageService),
+          create: (_) => PSStreamProvider(storageService)..initialize(),
         ),
       ],
       child: MaterialApp(
@@ -46,24 +43,23 @@ class PSLinkApp extends StatelessWidget {
         home: const AppNavigator(),
         routes: {
           Routes.home: (context) => const HomeScreen(),
-          Routes.registration: (context) {
-            final device = ModalRoute.of(context)?.settings.arguments as PSDevice?;
-            if (device == null) {
-              return const HomeScreen();
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == Routes.registration) {
+            final device = settings.arguments;
+            if (device is PSDevice) {
+              return MaterialPageRoute(
+                builder: (context) => RegistrationScreen(device: device),
+              );
             }
-            return RegistrationScreen(device: device);
-          },
-          // 其他路由可以在这里添加
-          // Routes.streaming: (context) => const StreamingScreen(),
-          // Routes.settings: (context) => const SettingsScreen(),
+          }
+          return null;
         },
       ),
     );
   }
 }
 
-/// 应用导航器
-/// 处理启动页到主页的过渡
 class AppNavigator extends StatefulWidget {
   const AppNavigator({super.key});
 

@@ -15,7 +15,7 @@ class AppTheme {
         error: Color(AppColors.errorColor),
       ),
       scaffoldBackgroundColor: Color(AppColors.backgroundColor),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Color(AppColors.cardColor),
         elevation: 4,
         shape: RoundedRectangleBorder(
@@ -118,7 +118,7 @@ class AppTheme {
         activeTrackColor: Color(AppColors.primaryColor),
         inactiveTrackColor: Color(AppColors.surfaceColor),
         thumbColor: Color(AppColors.accentColor),
-        overlayColor: Color(AppColors.primaryColor).withOpacity(0.2),
+        overlayColor: Color(AppColors.primaryColor).withValues(alpha: 0.2),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -139,7 +139,7 @@ class AppTheme {
         selectedItemColor: Color(AppColors.accentColor),
         unselectedItemColor: Color(AppColors.textSecondary),
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: Color(AppColors.cardColor),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),

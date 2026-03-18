@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/ps_device.dart';
+
 import '../core/constants.dart';
+import '../models/ps_device.dart';
 
-/// PlayStation 设备卡片组件
 class PSDeviceCard extends StatelessWidget {
-  final PSDevice device;
-  final bool isSelected;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-  final VoidCallback? onWake;
-
   const PSDeviceCard({
     super.key,
     required this.device,
@@ -18,6 +12,12 @@ class PSDeviceCard extends StatelessWidget {
     this.onLongPress,
     this.onWake,
   });
+
+  final PSDevice device;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onWake;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,10 @@ class PSDeviceCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isSelected
-            ? BorderSide(color: Color(AppColors.accentColor), width: 2)
+            ? const BorderSide(
+                color: Color(AppColors.accentColor),
+                width: 2,
+              )
             : BorderSide.none,
       ),
       child: InkWell(
@@ -39,16 +42,12 @@ class PSDeviceCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // 设备图标
               _buildDeviceIcon(),
               const SizedBox(width: 16),
-
-              // 设备信息
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 设备名称
                     Text(
                       device.displayName,
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -58,9 +57,9 @@ class PSDeviceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-
-                    // 设备类型和状态
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         _buildChip(
                           device.deviceTypeString,
@@ -68,44 +67,40 @@ class PSDeviceCard extends StatelessWidget {
                               ? Colors.blue
                               : Colors.indigo,
                         ),
-                        const SizedBox(width: 8),
                         _buildStatusIndicator(),
+                        if (device.isRegistered)
+                          _buildChip(
+                            '已注册',
+                            const Color(AppColors.successColor),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-
-                    // IP 地址
+                    const SizedBox(height: 6),
                     Text(
                       device.ipAddress,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Color(AppColors.textSecondary),
+                        color: const Color(AppColors.textSecondary),
                       ),
                     ),
+                    if (device.systemVersion.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '系统版本 ${device.systemVersion}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-
-              // 操作按钮
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (device.isRegistered) ...[
-                    Icon(
-                      Icons.check_circle,
-                      color: Color(AppColors.successColor),
-                      size: 20,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  if (device.state == PSDeviceState.standby && onWake != null)
-                    IconButton(
-                      icon: const Icon(Icons.power_settings_new),
-                      onPressed: onWake,
-                      tooltip: '唤醒',
-                      color: Color(AppColors.accentColor),
-                    ),
-                ],
-              ),
+              if (device.state == PSDeviceState.standby && onWake != null)
+                IconButton(
+                  icon: const Icon(Icons.power_settings_new),
+                  onPressed: onWake,
+                  tooltip: '唤醒主机',
+                  color: const Color(AppColors.accentColor),
+                ),
             ],
           ),
         ),
@@ -128,7 +123,7 @@ class PSDeviceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -136,7 +131,7 @@ class PSDeviceCard extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          device.deviceType == PSDeviceType.ps5 ? 'PS5' : 'PS4',
+          device.deviceTypeString,
           style: TextStyle(
             color: device.deviceType == PSDeviceType.ps5
                 ? Colors.black
@@ -153,7 +148,7 @@ class PSDeviceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -161,7 +156,7 @@ class PSDeviceCard extends StatelessWidget {
         style: TextStyle(
           color: color,
           fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -169,20 +164,15 @@ class PSDeviceCard extends StatelessWidget {
 
   Widget _buildStatusIndicator() {
     Color color;
-    String text;
-
     switch (device.state) {
       case PSDeviceState.ready:
-        color = Color(AppColors.successColor);
-        text = '就绪';
+        color = const Color(AppColors.successColor);
         break;
       case PSDeviceState.standby:
-        color = Color(AppColors.warningColor);
-        text = '待机';
+        color = const Color(AppColors.warningColor);
         break;
       case PSDeviceState.unknown:
         color = Colors.grey;
-        text = '未知';
         break;
     }
 
@@ -199,10 +189,11 @@ class PSDeviceCard extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          text,
+          device.stateString,
           style: TextStyle(
             color: color,
             fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

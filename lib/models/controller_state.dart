@@ -1,46 +1,38 @@
-/// 控制器输入状态
 class ControllerState {
-  // 按钮状态 (true = 按下)
-  final bool cross;       // X / ×
-  final bool circle;      // O / ○
-  final bool square;      // □
-  final bool triangle;    // △
+  final bool cross;
+  final bool circle;
+  final bool square;
+  final bool triangle;
   final bool l1;
   final bool r1;
-  final bool l3;          // 左摇杆按下
-  final bool r3;          // 右摇杆按下
+  final bool l3;
+  final bool r3;
   final bool options;
-  final bool share;       // Create (PS5)
-  final bool ps;          // PS 按钮
-  final bool touchpad;    // 触摸板按下
+  final bool share;
+  final bool ps;
+  final bool touchpad;
   final bool dpadUp;
   final bool dpadDown;
   final bool dpadLeft;
   final bool dpadRight;
-  final bool mute;        // PS5 麦克风静音
+  final bool mute;
 
-  // 模拟输入 (-1.0 到 1.0)
   final double leftStickX;
   final double leftStickY;
   final double rightStickX;
   final double rightStickY;
 
-  // 触发器 (0.0 到 1.0)
   final double l2;
   final double r2;
 
-  // 触摸板坐标 (0.0 到 1.0, null 表示未触摸)
   final double? touchX1;
   final double? touchY1;
   final double? touchX2;
   final double? touchY2;
 
-  // 陀螺仪 (可选)
   final double? gyroX;
   final double? gyroY;
   final double? gyroZ;
-
-  // 加速度计 (可选)
   final double? accelX;
   final double? accelY;
   final double? accelZ;
@@ -81,12 +73,10 @@ class ControllerState {
     this.accelZ,
   });
 
-  /// 转换为二进制数据包格式
   List<int> toBytes() {
     final bytes = <int>[];
 
-    // 按钮状态位掩码 (4字节)
-    int buttons = 0;
+    var buttons = 0;
     if (cross) buttons |= 0x0001;
     if (circle) buttons |= 0x0002;
     if (square) buttons |= 0x0004;
@@ -112,13 +102,10 @@ class ControllerState {
       (buttons >> 24) & 0xFF,
     ]);
 
-    // 摇杆 (每个轴2字节, 有符号16位整数)
     bytes.addAll(_encodeAxis(leftStickX));
     bytes.addAll(_encodeAxis(leftStickY));
     bytes.addAll(_encodeAxis(rightStickX));
     bytes.addAll(_encodeAxis(rightStickY));
-
-    // 触发器 (每个1字节, 0-255)
     bytes.add((l2 * 255).round().clamp(0, 255));
     bytes.add((r2 * 255).round().clamp(0, 255));
 

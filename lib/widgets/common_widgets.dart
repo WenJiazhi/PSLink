@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../core/constants.dart';
 
-/// 连接状态指示器
 class ConnectionIndicator extends StatelessWidget {
-  final bool isConnected;
-  final int latencyMs;
-  final double fps;
-  final int bitrate;
-  final VoidCallback? onDisconnect;
-
   const ConnectionIndicator({
     super.key,
     required this.isConnected,
@@ -17,6 +11,12 @@ class ConnectionIndicator extends StatelessWidget {
     this.bitrate = 0,
     this.onDisconnect,
   });
+
+  final bool isConnected;
+  final int latencyMs;
+  final double fps;
+  final int bitrate;
+  final VoidCallback? onDisconnect;
 
   @override
   Widget build(BuildContext context) {
@@ -29,41 +29,34 @@ class ConnectionIndicator extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 连接状态点
           Container(
             width: 8,
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isConnected
-                  ? Color(AppColors.successColor)
-                  : Color(AppColors.errorColor),
+                  ? const Color(AppColors.successColor)
+                  : const Color(AppColors.errorColor),
               boxShadow: [
                 BoxShadow(
                   color: (isConnected
-                          ? Color(AppColors.successColor)
-                          : Color(AppColors.errorColor))
-                      .withOpacity(0.5),
+                          ? const Color(AppColors.successColor)
+                          : const Color(AppColors.errorColor))
+                      .withValues(alpha: 0.5),
                   blurRadius: 4,
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-
-          // 延迟
           if (isConnected) ...[
             _buildStat('${latencyMs}ms', _getLatencyColor(latencyMs)),
             const SizedBox(width: 12),
-
-            // FPS
             _buildStat('${fps.toStringAsFixed(0)} FPS', Colors.white70),
             const SizedBox(width: 12),
-
-            // 码率
             _buildStat('${(bitrate / 1000).toStringAsFixed(1)} Mbps', Colors.white70),
           ] else ...[
-            Text(
+            const Text(
               '未连接',
               style: TextStyle(
                 color: Colors.white70,
@@ -71,8 +64,6 @@ class ConnectionIndicator extends StatelessWidget {
               ),
             ),
           ],
-
-          // 断开按钮
           if (isConnected && onDisconnect != null) ...[
             const SizedBox(width: 8),
             GestureDetector(
@@ -81,9 +72,9 @@ class ConnectionIndicator extends StatelessWidget {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(AppColors.errorColor).withOpacity(0.2),
+                  color: const Color(AppColors.errorColor).withValues(alpha: 0.2),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.close,
                   size: 14,
                   color: Color(AppColors.errorColor),
@@ -108,24 +99,27 @@ class ConnectionIndicator extends StatelessWidget {
   }
 
   Color _getLatencyColor(int latency) {
-    if (latency < 30) return Color(AppColors.successColor);
-    if (latency < 60) return Color(AppColors.warningColor);
-    return Color(AppColors.errorColor);
+    if (latency < 30) {
+      return const Color(AppColors.successColor);
+    }
+    if (latency < 60) {
+      return const Color(AppColors.warningColor);
+    }
+    return const Color(AppColors.errorColor);
   }
 }
 
-/// 加载动画组件
 class LoadingOverlay extends StatelessWidget {
-  final String? message;
-  final bool showProgress;
-  final double? progress;
-
   const LoadingOverlay({
     super.key,
     this.message,
     this.showProgress = false,
     this.progress,
   });
+
+  final String? message;
+  final bool showProgress;
+  final double? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -142,14 +136,14 @@ class LoadingOverlay extends StatelessWidget {
                 child: CircularProgressIndicator(
                   value: progress,
                   strokeWidth: 4,
-                  valueColor: AlwaysStoppedAnimation<Color>(
+                  valueColor: const AlwaysStoppedAnimation<Color>(
                     Color(AppColors.accentColor),
                   ),
-                  backgroundColor: Color(AppColors.surfaceColor),
+                  backgroundColor: const Color(AppColors.surfaceColor),
                 ),
               )
             else
-              SizedBox(
+              const SizedBox(
                 width: 40,
                 height: 40,
                 child: CircularProgressIndicator(
@@ -163,7 +157,7 @@ class LoadingOverlay extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 message!,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                 ),
@@ -176,18 +170,17 @@ class LoadingOverlay extends StatelessWidget {
   }
 }
 
-/// PIN 码输入框
 class PinCodeInput extends StatefulWidget {
-  final int length;
-  final ValueChanged<String>? onCompleted;
-  final ValueChanged<String>? onChanged;
-
   const PinCodeInput({
     super.key,
     this.length = 8,
     this.onCompleted,
     this.onChanged,
   });
+
+  final int length;
+  final ValueChanged<String>? onCompleted;
+  final ValueChanged<String>? onChanged;
 
   @override
   State<PinCodeInput> createState() => _PinCodeInputState();
@@ -200,8 +193,14 @@ class _PinCodeInputState extends State<PinCodeInput> {
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(widget.length, (_) => TextEditingController());
-    _focusNodes = List.generate(widget.length, (_) => FocusNode());
+    _controllers = List<TextEditingController>.generate(
+      widget.length,
+      (_) => TextEditingController(),
+    );
+    _focusNodes = List<FocusNode>.generate(
+      widget.length,
+      (_) => FocusNode(),
+    );
   }
 
   @override
@@ -215,17 +214,13 @@ class _PinCodeInputState extends State<PinCodeInput> {
     super.dispose();
   }
 
-  String get _currentValue {
-    return _controllers.map((c) => c.text).join();
-  }
+  String get _currentValue => _controllers.map((controller) => controller.text).join();
 
   void _handleInput(int index, String value) {
     if (value.isNotEmpty) {
-      // 输入数字，跳转到下一个
       if (index < widget.length - 1) {
         _focusNodes[index + 1].requestFocus();
       } else {
-        // 最后一个，取消焦点
         _focusNodes[index].unfocus();
       }
     }
@@ -237,26 +232,18 @@ class _PinCodeInputState extends State<PinCodeInput> {
     }
   }
 
-  void _handleBackspace(int index) {
-    if (_controllers[index].text.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-      _controllers[index - 1].clear();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(widget.length, (index) {
-        // 在第4位后添加分隔符
+      children: List<Widget>.generate(widget.length, (index) {
         final showSeparator = index == 4;
 
         return Row(
           children: [
             if (showSeparator)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   '-',
                   style: TextStyle(
@@ -280,14 +267,14 @@ class _PinCodeInputState extends State<PinCodeInput> {
                 decoration: InputDecoration(
                   counterText: '',
                   filled: true,
-                  fillColor: Color(AppColors.surfaceColor),
+                  fillColor: const Color(AppColors.surfaceColor),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
+                    borderSide: const BorderSide(
                       color: Color(AppColors.primaryColor),
                       width: 2,
                     ),
@@ -310,14 +297,7 @@ class _PinCodeInputState extends State<PinCodeInput> {
   }
 }
 
-/// 设置项组件
 class SettingsTile extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final IconData? icon;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
   const SettingsTile({
     super.key,
     required this.title,
@@ -327,6 +307,12 @@ class SettingsTile extends StatelessWidget {
     this.onTap,
   });
 
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -334,12 +320,12 @@ class SettingsTile extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Color(AppColors.primaryColor).withOpacity(0.2),
+                color: const Color(AppColors.primaryColor).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: Color(AppColors.accentColor),
+                color: const Color(AppColors.accentColor),
                 size: 20,
               ),
             )
@@ -352,16 +338,7 @@ class SettingsTile extends StatelessWidget {
   }
 }
 
-/// 设置滑块
 class SettingsSlider extends StatelessWidget {
-  final String title;
-  final double value;
-  final double min;
-  final double max;
-  final int? divisions;
-  final String? valueLabel;
-  final ValueChanged<double>? onChanged;
-
   const SettingsSlider({
     super.key,
     required this.title,
@@ -372,6 +349,14 @@ class SettingsSlider extends StatelessWidget {
     this.valueLabel,
     this.onChanged,
   });
+
+  final String title;
+  final double value;
+  final double min;
+  final double max;
+  final int? divisions;
+  final String? valueLabel;
+  final ValueChanged<double>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -390,7 +375,7 @@ class SettingsSlider extends StatelessWidget {
               if (valueLabel != null)
                 Text(
                   valueLabel!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color(AppColors.accentColor),
                     fontWeight: FontWeight.w500,
                   ),

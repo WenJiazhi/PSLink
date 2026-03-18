@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../core/constants.dart';
-import '../providers/stream_provider.dart';
-import '../widgets/virtual_controller.dart';
-import '../services/streaming_service.dart';
 
-/// 串流页面
+import '../core/constants.dart';
+import '../providers/device_provider.dart';
+import '../providers/stream_provider.dart';
+import '../services/streaming_service.dart';
+import '../widgets/virtual_controller.dart';
+
 class StreamingScreen extends StatefulWidget {
   const StreamingScreen({super.key});
 
@@ -20,51 +22,75 @@ class _StreamingScreenState extends State<StreamingScreen> {
   bool _showController = false;
   int _tapCount = 0;
   DateTime? _lastTapTime;
+  VlcPlayerController? _vlcController;
+  String? _vlcUrl;
+  bool _playerSyncPending = false;
 
   @override
   void initState() {
     super.initState();
-    _enableFullscreen();
+    _setFullscreen(true);
     WakelockPlus.enable();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startSelectedDeviceStream();
+    });
+  }
+
+  Future<void> _startSelectedDeviceStream() async {
+    final device = context.read<DeviceProvider>().selectedDevice;
+    final streamProvider = context.read<PSStreamProvider>();
+    if (device == null ||
+        streamProvider.isConnected ||
+        streamProvider.isConnecting) {
+      return;
+    }
+    await streamProvider.startStreaming(device);
   }
 
   @override
   void dispose() {
-    _disableFullscreen();
+    final controller = _vlcController;
+    _vlcController = null;
+    controller?.dispose();
+    _restoreSystemUi();
     WakelockPlus.disable();
     super.dispose();
   }
 
-  void _enableFullscreen() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    setState(() => _isFullscreen = true);
+  void _setFullscreen(bool enabled) {
+    if (enabled) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      _restoreSystemUi();
+    }
+
+    if (mounted) {
+      setState(() => _isFullscreen = enabled);
+    } else {
+      _isFullscreen = enabled;
+    }
   }
 
-  void _disableFullscreen() {
+  void _restoreSystemUi() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    setState(() => _isFullscreen = false);
   }
 
   void _handleTap() {
     final now = DateTime.now();
-    if (_lastTapTime != null && now.difference(_lastTapTime!) < const Duration(milliseconds: 300)) {
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!) < const Duration(milliseconds: 300)) {
       _tapCount++;
       if (_tapCount == 2) {
-        // 双击切换全屏
-        if (_isFullscreen) {
-          _disableFullscreen();
-        } else {
-          _enableFullscreen();
-        }
+        _setFullscreen(!_isFullscreen);
         _tapCount = 0;
       }
     } else {
@@ -74,24 +100,33 @@ class _StreamingScreenState extends State<StreamingScreen> {
   }
 
   void _handleThreeFingerGesture() {
-    final provider = context.read<StreamProvider>();
-    if (provider.settings.showControllerAlways) return;
-
+    final provider = context.read<PSStreamProvider>();
+    if (provider.settings.showControllerAlways) {
+      return;
+    }
     setState(() {
       _showController = !_showController;
     });
+  }
+
+  Future<void> _leaveStream(PSStreamProvider provider) async {
+    await provider.stopStreaming();
+    provider.clearError();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Consumer<StreamProvider>(
+      body: Consumer<PSStreamProvider>(
         builder: (context, provider, child) {
+          _syncPlayer(provider.videoStreamUrl);
           return Stack(
             fit: StackFit.expand,
             children: [
-              // 视频显示区域
               GestureDetector(
                 onTap: _handleTap,
                 onScaleStart: (details) {
@@ -101,8 +136,6 @@ class _StreamingScreenState extends State<StreamingScreen> {
                 },
                 child: _buildVideoView(provider),
               ),
-
-              // 顶部状态栏
               if (!_isFullscreen || provider.stats != null)
                 Positioned(
                   top: 0,
@@ -110,8 +143,6 @@ class _StreamingScreenState extends State<StreamingScreen> {
                   right: 0,
                   child: _buildStatusBar(provider),
                 ),
-
-              // 虚拟控制器
               if (_showController || provider.settings.showControllerAlways)
                 Positioned.fill(
                   child: VirtualController(
@@ -123,21 +154,12 @@ class _StreamingScreenState extends State<StreamingScreen> {
                         provider.releaseButton(button);
                       }
                     },
-                    onStickChanged: (stick, x, y) {
-                      provider.updateStick(stick, x, y);
-                    },
-                    onTriggerChanged: (trigger, value) {
-                      provider.updateTrigger(trigger, value);
-                    },
+                    onStickChanged: provider.updateStick,
+                    onTriggerChanged: provider.updateTrigger,
                   ),
                 ),
-
-              // 加载/错误提示
-              if (provider.isConnecting)
-                _buildLoadingOverlay(),
-
-              if (provider.error != null)
-                _buildErrorOverlay(provider),
+              if (provider.isConnecting) _buildLoadingOverlay(),
+              if (provider.error != null) _buildErrorOverlay(provider),
             ],
           );
         },
@@ -145,7 +167,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  Widget _buildVideoView(StreamProvider provider) {
+  Widget _buildVideoView(PSStreamProvider provider) {
     if (!provider.isConnected && !provider.isConnecting) {
       return const Center(
         child: Column(
@@ -154,7 +176,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
             Icon(Icons.videocam_off, size: 64, color: Colors.white24),
             SizedBox(height: 16),
             Text(
-              '未连接',
+              '尚未连接',
               style: TextStyle(color: Colors.white54, fontSize: 18),
             ),
           ],
@@ -162,9 +184,19 @@ class _StreamingScreenState extends State<StreamingScreen> {
       );
     }
 
-    // 这里应该集成实际的视频渲染组件
-    // 例如使用 flutter_vlc_player 或其他视频播放器
-    return StreamBuilder<List<int>>(
+    if (_vlcController != null) {
+      return VlcPlayer(
+        controller: _vlcController!,
+        aspectRatio: 16 / 9,
+        placeholder: const Center(
+          child: CircularProgressIndicator(
+            color: Color(AppColors.primaryColor),
+          ),
+        ),
+      );
+    }
+
+    return StreamBuilder<Uint8List>(
       stream: provider.videoStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -175,13 +207,11 @@ class _StreamingScreenState extends State<StreamingScreen> {
           );
         }
 
-        // TODO: 实际渲染视频帧
-        // 这里需要集成 H.264/HEVC 解码器和渲染器
         return Container(
           color: Colors.black,
           child: const Center(
             child: Text(
-              '视频流',
+              '已接收视频数据，正在等待播放器建立连接…',
               style: TextStyle(color: Colors.white54),
             ),
           ),
@@ -190,7 +220,58 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  Widget _buildStatusBar(StreamProvider provider) {
+  void _syncPlayer(String? url) {
+    if (_playerSyncPending) {
+      return;
+    }
+
+    if (url == null || url.isEmpty) {
+      if (_vlcController == null) {
+        return;
+      }
+      _playerSyncPending = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final oldController = _vlcController;
+        _vlcController = null;
+        _vlcUrl = null;
+        if (mounted) {
+          setState(() {});
+        }
+        await oldController?.dispose();
+        _playerSyncPending = false;
+      });
+      return;
+    }
+
+    if (_vlcUrl == url) {
+      return;
+    }
+
+    _playerSyncPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final oldController = _vlcController;
+      final controller = VlcPlayerController.network(
+        url,
+        autoPlay: true,
+        hwAcc: HwAcc.auto,
+        options: VlcPlayerOptions(
+          advanced: VlcAdvancedOptions([
+            VlcAdvancedOptions.networkCaching(100),
+            VlcAdvancedOptions.liveCaching(100),
+          ]),
+        ),
+      );
+      _vlcController = controller;
+      _vlcUrl = url;
+      if (mounted) {
+        setState(() {});
+      }
+      await oldController?.dispose();
+      _playerSyncPending = false;
+    });
+  }
+
+  Widget _buildStatusBar(PSStreamProvider provider) {
     final stats = provider.stats;
     final state = provider.sessionState;
 
@@ -201,7 +282,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withOpacity(0.7),
+            Colors.black.withValues(alpha: 0.7),
             Colors.transparent,
           ],
         ),
@@ -210,15 +291,14 @@ class _StreamingScreenState extends State<StreamingScreen> {
         bottom: false,
         child: Row(
           children: [
-            // 返回按钮
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () async {
                 final shouldExit = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('断开连接?'),
-                    content: const Text('确定要停止串流并返回吗?'),
+                    title: const Text('断开连接'),
+                    content: const Text('确定要停止串流并返回吗？'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
@@ -232,49 +312,30 @@ class _StreamingScreenState extends State<StreamingScreen> {
                   ),
                 );
 
-                if (shouldExit == true && mounted) {
-                  await provider.stopStreaming();
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                  }
+                if (shouldExit == true) {
+                  await _leaveStream(provider);
                 }
               },
             ),
-
-            const SizedBox(width: 16),
-
-            // 连接状态
+            const SizedBox(width: 12),
             _buildStatusChip(
               _getStateLabel(state),
               _getStateColor(state),
             ),
-
             const Spacer(),
-
-            // 统计信息
             if (stats != null) ...[
-              _buildStatItem(
-                Icons.speed,
-                '${stats.latencyMs}ms',
-              ),
+              _buildStatItem(Icons.speed, '${stats.latencyMs} ms'),
               const SizedBox(width: 16),
-              _buildStatItem(
-                Icons.videocam,
-                '${stats.fps.toStringAsFixed(0)} FPS',
-              ),
+              _buildStatItem(Icons.videocam, '${stats.fps.toStringAsFixed(0)} FPS'),
               const SizedBox(width: 16),
               _buildStatItem(
                 Icons.network_check,
                 '${(stats.videoBitrate / 1000).toStringAsFixed(1)} Mbps',
               ),
             ],
-
-            // 菜单按钮
             IconButton(
               icon: const Icon(Icons.more_vert, color: Colors.white),
-              onPressed: () {
-                _showStreamMenu(provider);
-              },
+              onPressed: () => _showStreamMenu(provider),
             ),
           ],
         ),
@@ -286,9 +347,9 @@ class _StreamingScreenState extends State<StreamingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color, width: 1),
+        border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -297,8 +358,8 @@ class _StreamingScreenState extends State<StreamingScreen> {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               color: color,
+              shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 8),
@@ -357,12 +418,12 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  Widget _buildErrorOverlay(StreamProvider provider) {
+  Widget _buildErrorOverlay(PSStreamProvider provider) {
     return Container(
       color: Colors.black87,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -382,10 +443,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: () {
-                  provider.clearError();
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => _leaveStream(provider),
                 child: const Text('返回'),
               ),
             ],
@@ -395,8 +453,8 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  void _showStreamMenu(StreamProvider provider) {
-    showModalBottomSheet(
+  void _showStreamMenu(PSStreamProvider provider) {
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(AppColors.cardColor),
       shape: const RoundedRectangleBorder(
@@ -408,7 +466,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.gamepad),
-              title: const Text('切换控制器'),
+              title: const Text('切换虚拟手柄'),
               onTap: () {
                 Navigator.pop(context);
                 _handleThreeFingerGesture();
@@ -416,14 +474,10 @@ class _StreamingScreenState extends State<StreamingScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.fullscreen),
-              title: Text(_isFullscreen ? '退出全屏' : '全屏'),
+              title: Text(_isFullscreen ? '退出全屏' : '进入全屏'),
               onTap: () {
                 Navigator.pop(context);
-                if (_isFullscreen) {
-                  _disableFullscreen();
-                } else {
-                  _enableFullscreen();
-                }
+                _setFullscreen(!_isFullscreen);
               },
             ),
             ListTile(
@@ -436,17 +490,17 @@ class _StreamingScreenState extends State<StreamingScreen> {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.logout, color: Color(AppColors.errorColor)),
+              leading: const Icon(
+                Icons.logout,
+                color: Color(AppColors.errorColor),
+              ),
               title: const Text(
                 '断开连接',
                 style: TextStyle(color: Color(AppColors.errorColor)),
               ),
               onTap: () async {
                 Navigator.pop(context);
-                await provider.stopStreaming();
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
+                await _leaveStream(provider);
               },
             ),
             const SizedBox(height: 8),
@@ -479,11 +533,10 @@ class _StreamingScreenState extends State<StreamingScreen> {
         return Colors.grey;
       case SessionState.connecting:
       case SessionState.authenticating:
+      case SessionState.paused:
         return const Color(AppColors.warningColor);
       case SessionState.streaming:
         return const Color(AppColors.successColor);
-      case SessionState.paused:
-        return const Color(AppColors.warningColor);
       case SessionState.error:
         return const Color(AppColors.errorColor);
     }
