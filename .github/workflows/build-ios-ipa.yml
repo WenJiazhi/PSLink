@@ -1,0 +1,203 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+    inputs:
+      export_method:
+        description: Export method for signed builds
+        required: false
+        default: development
+        type: choice
+        options:
+          - development
+          - ad-hoc
+          - app-store
+          - app-store-connect
+          - release-testing
+          - debugging
+      flutter_channel:
+        description: Flutter channel
+        required: false
+        default: stable
+        type: choice
+        options:
+          - stable
+          - beta
+
+concurrency:
+  group: build-ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios-ipa:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    env:
+      BUNDLE_ID: com.pslink.pslink
+      CERT_BASE64: ${{ secrets.IOS_BUILD_CERTIFICATE_BASE64 }}
+      CERT_PASSWORD: ${{ secrets.IOS_BUILD_CERTIFICATE_PASSWORD }}
+      EXPORT_METHOD: ${{ inputs.export_method || 'development' }}
+      EXPORT_OPTIONS_PLIST_BASE64: ${{ secrets.IOS_EXPORT_OPTIONS_PLIST_BASE64 }}
+      FLUTTER_CHANNEL: ${{ inputs.flutter_channel || 'stable' }}
+      KEYCHAIN_PASSWORD: ${{ secrets.IOS_GITHUB_KEYCHAIN_PASSWORD }}
+      PROFILE_BASE64: ${{ secrets.IOS_MOBILE_PROVISIONING_PROFILE_BASE64 }}
+      PROFILE_NAME: ${{ secrets.IOS_MOBILE_PROVISIONING_PROFILE_NAME }}
+      TEAM_ID: ${{ secrets.APPLE_DEVELOPMENT_TEAM }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test --no-pub
+
+      - name: Detect signing assets
+        id: signing
+        shell: bash
+        run: |
+          if [[ -n "${CERT_BASE64}" && -n "${CERT_PASSWORD}" && -n "${PROFILE_BASE64}" && -n "${PROFILE_NAME}" && -n "${KEYCHAIN_PASSWORD}" ]]; then
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build archive
+        run: flutter build ipa --release --no-codesign
+
+      - name: Prepare unsigned IPA
+        if: steps.signing.outputs.enabled != 'true'
+        shell: bash
+        run: |
+          APP_PATH="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          if [[ ! -d "${APP_PATH}" ]]; then
+            APP_PATH="build/ios/iphoneos/Runner.app"
+          fi
+          test -d "${APP_PATH}"
+          mkdir -p build/ios/unsigned/Payload
+          cp -R "${APP_PATH}" build/ios/unsigned/Payload/Runner.app
+          ditto -c -k --sequesterRsrc --keepParent build/ios/unsigned/Payload build/ios/unsigned/pslink-unsigned.ipa
+
+      - name: Upload unsigned artifacts
+        if: steps.signing.outputs.enabled != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pslink-ios-unsigned-${{ github.run_number }}
+          if-no-files-found: error
+          path: |
+            build/ios/archive/Runner.xcarchive
+            build/ios/unsigned/pslink-unsigned.ipa
+
+      - name: Import signing assets
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+          temp = Path(os.environ["RUNNER_TEMP"])
+          (temp / "build-cert.p12").write_bytes(base64.b64decode(os.environ["CERT_BASE64"]))
+          (temp / "profile.mobileprovision").write_bytes(base64.b64decode(os.environ["PROFILE_BASE64"]))
+          if os.environ.get("EXPORT_OPTIONS_PLIST_BASE64"):
+              (temp / "ExportOptions.plist").write_bytes(base64.b64decode(os.environ["EXPORT_OPTIONS_PLIST_BASE64"]))
+          PY
+
+          KEYCHAIN_PATH="${RUNNER_TEMP}/build.keychain-db"
+          EXISTING_KEYCHAINS=$(security list-keychains -d user | tr -d '"' | tr '\n' ' ')
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security list-keychains -d user -s "${KEYCHAIN_PATH}" ${EXISTING_KEYCHAINS}
+          security import "${RUNNER_TEMP}/build-cert.p12" \
+            -k "${KEYCHAIN_PATH}" \
+            -P "${CERT_PASSWORD}" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+          mkdir -p "${HOME}/Library/MobileDevice/Provisioning Profiles"
+          security cms -D -i "${RUNNER_TEMP}/profile.mobileprovision" > "${RUNNER_TEMP}/profile.plist"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" "${RUNNER_TEMP}/profile.plist")
+          cp "${RUNNER_TEMP}/profile.mobileprovision" "${HOME}/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+
+      - name: Generate export options
+        if: steps.signing.outputs.enabled == 'true' && env.EXPORT_OPTIONS_PLIST_BASE64 == ''
+        shell: bash
+        run: |
+          SIGNING_CERTIFICATE="Apple Distribution"
+          case "${EXPORT_METHOD}" in
+            development|debugging)
+              SIGNING_CERTIFICATE="Apple Development"
+              ;;
+          esac
+
+          {
+            echo '<?xml version="1.0" encoding="UTF-8"?>'
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
+            echo '<plist version="1.0">'
+            echo '<dict>'
+            echo '  <key>compileBitcode</key>'
+            echo '  <false/>'
+            echo '  <key>method</key>'
+            echo "  <string>${EXPORT_METHOD}</string>"
+            echo '  <key>provisioningProfiles</key>'
+            echo '  <dict>'
+            echo "    <key>${BUNDLE_ID}</key>"
+            echo "    <string>${PROFILE_NAME}</string>"
+            echo '  </dict>'
+            echo '  <key>signingCertificate</key>'
+            echo "  <string>${SIGNING_CERTIFICATE}</string>"
+            echo '  <key>signingStyle</key>'
+            echo '  <string>manual</string>'
+            echo '  <key>stripSwiftSymbols</key>'
+            echo '  <true/>'
+            if [[ -n "${TEAM_ID}" ]]; then
+              echo '  <key>teamID</key>'
+              echo "  <string>${TEAM_ID}</string>"
+            fi
+            echo '  <key>thinning</key>'
+            echo '  <string>&lt;none&gt;</string>'
+            echo '</dict>'
+            echo '</plist>'
+          } > "${RUNNER_TEMP}/ExportOptions.plist"
+
+      - name: Export signed IPA
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          test -d build/ios/archive/Runner.xcarchive
+          xcodebuild -exportArchive \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist "${RUNNER_TEMP}/ExportOptions.plist" \
+            -allowProvisioningUpdates
+
+      - name: Upload signed artifacts
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pslink-ios-signed-${{ github.run_number }}
+          if-no-files-found: error
+          path: |
+            build/ios/archive/Runner.xcarchive
+            build/ios/ipa/*.ipa

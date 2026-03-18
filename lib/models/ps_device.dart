@@ -1,7 +1,3 @@
-import 'package:hive/hive.dart';
-
-part 'ps_device.g.dart';
-
 /// PlayStation 设备状态
 enum PSDeviceState {
   ready,      // 就绪可连接
@@ -16,39 +12,17 @@ enum PSDeviceType {
 }
 
 /// PlayStation 设备模型
-@HiveType(typeId: 0)
 class PSDevice {
-  @HiveField(0)
   final String hostId;
-
-  @HiveField(1)
   final String hostName;
-
-  @HiveField(2)
   final String ipAddress;
-
-  @HiveField(3)
   final int port;
-
-  @HiveField(4)
   final String systemVersion;
-
-  @HiveField(5)
   final int deviceTypeValue;
-
-  @HiveField(6)
   final int stateValue;
-
-  @HiveField(7)
   final String? registKey;
-
-  @HiveField(8)
   final String? rpKey;
-
-  @HiveField(9)
   final DateTime? lastConnected;
-
-  @HiveField(10)
   final String? nickname;
 
   PSDevice({
@@ -180,8 +154,9 @@ class PSDevice {
 
     // 判断设备类型
     final systemVersion = headers['system-version'] ?? '';
-    final isPS5 = systemVersion.startsWith('0') ||
-                  headers['host-type']?.contains('PS5') == true;
+    final hostType = (headers['host-type'] ?? '').toUpperCase();
+    final isPS5 =
+        hostType.contains('PS5') || (hostType.isEmpty && systemVersion.startsWith('04.'));
 
     return PSDevice(
       hostId: headers['host-id'] ?? '',

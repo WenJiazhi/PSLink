@@ -15,7 +15,7 @@ class AppTheme {
         error: Color(AppColors.errorColor),
       ),
       scaffoldBackgroundColor: Color(AppColors.backgroundColor),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Color(AppColors.cardColor),
         elevation: 4,
         shape: RoundedRectangleBorder(
@@ -139,7 +139,7 @@ class AppTheme {
         selectedItemColor: Color(AppColors.accentColor),
         unselectedItemColor: Color(AppColors.textSecondary),
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: Color(AppColors.cardColor),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),

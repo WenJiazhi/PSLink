@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../providers/stream_provider.dart';
 import '../models/stream_settings.dart';
 import 'about_screen.dart';
 
-/// 设置页面
+/// 璁剧疆椤甸潰
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -13,41 +13,41 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设置'),
+        title: const Text('璁剧疆'),
       ),
-      body: Consumer<StreamProvider>(
+      body: Consumer<PSStreamProvider>(
         builder: (context, provider, child) {
           final settings = provider.settings;
 
           return ListView(
             padding: const EdgeInsets.symmetric(vertical: 16),
             children: [
-              // 视频设置
-              _buildSectionHeader('视频设置'),
+              // Video settings
+              _buildSectionHeader('Video'),
               _buildVideoSettings(context, provider, settings),
 
               const SizedBox(height: 24),
 
-              // 控制器设置
-              _buildSectionHeader('控制器设置'),
+              // Controller settings
+              _buildSectionHeader('Controller'),
               _buildControllerSettings(context, provider, settings),
 
               const SizedBox(height: 24),
 
-              // 音频设置
-              _buildSectionHeader('音频设置'),
+              // Audio settings
+              _buildSectionHeader('Audio'),
               _buildAudioSettings(context, provider, settings),
 
               const SizedBox(height: 24),
 
-              // 高级设置
-              _buildSectionHeader('高级设置'),
+              // Advanced settings
+              _buildSectionHeader('Advanced'),
               _buildAdvancedSettings(context, provider, settings),
 
               const SizedBox(height: 24),
 
-              // 关于
-              _buildSectionHeader('关于'),
+              // About
+              _buildSectionHeader('About'),
               _buildAboutSection(context),
 
               const SizedBox(height: 32),
@@ -75,34 +75,34 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildVideoSettings(
     BuildContext context,
-    StreamProvider provider,
+    PSStreamProvider provider,
     StreamSettings settings,
   ) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // 分辨率
+          // Resolution
           ListTile(
             leading: const Icon(Icons.aspect_ratio),
-            title: const Text('分辨率'),
+            title: const Text('Resolution'),
             subtitle: Text(settings.resolution),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showResolutionDialog(context, provider, settings),
           ),
           const Divider(height: 1),
 
-          // 帧率
+          // 甯х巼
           ListTile(
             leading: const Icon(Icons.speed),
-            title: const Text('帧率'),
+            title: const Text('甯х巼'),
             subtitle: Text('${settings.frameRate} FPS'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showFrameRateDialog(context, provider, settings),
           ),
           const Divider(height: 1),
 
-          // 码率
+          // 鐮佺巼
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -113,7 +113,7 @@ class SettingsScreen extends StatelessWidget {
                     const Icon(Icons.signal_cellular_alt, size: 20),
                     const SizedBox(width: 12),
                     const Text(
-                      '码率',
+                      '鐮佺巼',
                       style: TextStyle(fontSize: 16),
                     ),
                     const Spacer(),
@@ -159,14 +159,14 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildControllerSettings(
     BuildContext context,
-    StreamProvider provider,
+    PSStreamProvider provider,
     StreamSettings settings,
   ) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // 控制器透明度
+          // Controller opacity
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -177,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
                     const Icon(Icons.opacity, size: 20),
                     const SizedBox(width: 12),
                     const Text(
-                      '控制器透明度',
+                      'Controller opacity',
                       style: TextStyle(fontSize: 16),
                     ),
                     const Spacer(),
@@ -205,11 +205,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // 始终显示控制器
+          // Always show controller
           SwitchListTile(
             secondary: const Icon(Icons.gamepad),
-            title: const Text('始终显示控制器'),
-            subtitle: const Text('禁用时可通过三指手势显示/隐藏'),
+            title: const Text('Always show controller'),
+            subtitle: const Text('Disable this to toggle with a three-finger gesture'),
             value: settings.showControllerAlways,
             onChanged: (value) {
               provider.updateSettings(
@@ -224,14 +224,14 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildAudioSettings(
     BuildContext context,
-    StreamProvider provider,
+    PSStreamProvider provider,
     StreamSettings settings,
   ) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // 音频延迟
+          // 闊抽寤惰繜
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -242,7 +242,7 @@ class SettingsScreen extends StatelessWidget {
                     const Icon(Icons.access_time, size: 20),
                     const SizedBox(width: 12),
                     const Text(
-                      '音频延迟补偿',
+                      '闊抽寤惰繜琛ュ伩',
                       style: TextStyle(fontSize: 16),
                     ),
                     const Spacer(),
@@ -272,11 +272,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // 启用麦克风
+          // Enable microphone
           SwitchListTile(
             secondary: const Icon(Icons.mic),
-            title: const Text('启用麦克风'),
-            subtitle: const Text('允许通过麦克风与PlayStation通话'),
+            title: const Text('Enable microphone'),
+            subtitle: const Text('Allow voice chat during Remote Play'),
             value: settings.enableMicrophone,
             onChanged: (value) {
               provider.updateSettings(
@@ -291,7 +291,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildAdvancedSettings(
     BuildContext context,
-    StreamProvider provider,
+    PSStreamProvider provider,
     StreamSettings settings,
   ) {
     return Card(
@@ -301,8 +301,8 @@ class SettingsScreen extends StatelessWidget {
           // HDR
           SwitchListTile(
             secondary: const Icon(Icons.hdr_on),
-            title: const Text('启用 HDR'),
-            subtitle: const Text('需要设备支持 (PS5)'),
+            title: const Text('鍚敤 HDR'),
+            subtitle: const Text('闇€瑕佽澶囨敮鎸?(PS5)'),
             value: settings.enableHDR,
             onChanged: (value) {
               provider.updateSettings(
@@ -312,11 +312,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // 触觉反馈
+          // 瑙﹁鍙嶉
           SwitchListTile(
             secondary: const Icon(Icons.vibration),
-            title: const Text('触觉反馈'),
-            subtitle: const Text('震动反馈 (DualSense)'),
+            title: const Text('瑙﹁鍙嶉'),
+            subtitle: const Text('闇囧姩鍙嶉 (DualSense)'),
             value: settings.enableHaptics,
             onChanged: (value) {
               provider.updateSettings(
@@ -326,11 +326,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // 自适应扳机
+          // 鑷€傚簲鎵虫満
           SwitchListTile(
             secondary: const Icon(Icons.adjust),
-            title: const Text('自适应扳机'),
-            subtitle: const Text('L2/R2 自适应阻力 (DualSense)'),
+            title: const Text('鑷€傚簲鎵虫満'),
+            subtitle: const Text('L2/R2 鑷€傚簲闃诲姏 (DualSense)'),
             value: settings.enableAdaptiveTriggers,
             onChanged: (value) {
               provider.updateSettings(
@@ -348,7 +348,7 @@ class SettingsScreen extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: ListTile(
         leading: const Icon(Icons.info_outline),
-        title: const Text('关于 PSLink'),
+        title: const Text('About PSLink'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.push(
@@ -362,13 +362,13 @@ class SettingsScreen extends StatelessWidget {
 
   void _showResolutionDialog(
     BuildContext context,
-    StreamProvider provider,
+    PSStreamProvider provider,
     StreamSettings settings,
   ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('选择分辨率'),
+        builder: (context) => AlertDialog(
+          title: const Text('Select resolution'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: PSConstants.resolutions.keys.map((resolution) {
@@ -393,7 +393,7 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -402,13 +402,13 @@ class SettingsScreen extends StatelessWidget {
 
   void _showFrameRateDialog(
     BuildContext context,
-    StreamProvider provider,
+    PSStreamProvider provider,
     StreamSettings settings,
   ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('选择帧率'),
+        builder: (context) => AlertDialog(
+          title: const Text('Select frame rate'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: PSConstants.frameRates.map((frameRate) {
@@ -430,10 +430,12 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
     );
   }
 }
+
+

@@ -7,11 +7,11 @@ import '../services/streaming_service.dart';
 import '../services/storage_service.dart';
 
 /// 串流状态管理 Provider
-class StreamProvider extends ChangeNotifier {
+class PSStreamProvider extends ChangeNotifier {
   final StreamingService _streamingService = StreamingService();
   final StorageService _storageService;
 
-  StreamProvider(this._storageService);
+  PSStreamProvider(this._storageService);
 
   // 订阅
   StreamSubscription? _stateSubscription;

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../core/constants.dart';
+import '../providers/device_provider.dart';
 import '../providers/stream_provider.dart';
 import '../widgets/virtual_controller.dart';
 import '../services/streaming_service.dart';
@@ -26,6 +27,13 @@ class _StreamingScreenState extends State<StreamingScreen> {
     super.initState();
     _enableFullscreen();
     WakelockPlus.enable();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final device = context.read<DeviceProvider>().selectedDevice;
+      final streamProvider = context.read<PSStreamProvider>();
+      if (device != null && !streamProvider.isConnected && !streamProvider.isConnecting) {
+        await streamProvider.startStreaming(device);
+      }
+    });
   }
 
   @override
@@ -74,7 +82,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
   }
 
   void _handleThreeFingerGesture() {
-    final provider = context.read<StreamProvider>();
+    final provider = context.read<PSStreamProvider>();
     if (provider.settings.showControllerAlways) return;
 
     setState(() {
@@ -86,7 +94,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Consumer<StreamProvider>(
+      body: Consumer<PSStreamProvider>(
         builder: (context, provider, child) {
           return Stack(
             fit: StackFit.expand,
@@ -145,7 +153,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  Widget _buildVideoView(StreamProvider provider) {
+  Widget _buildVideoView(PSStreamProvider provider) {
     if (!provider.isConnected && !provider.isConnecting) {
       return const Center(
         child: Column(
@@ -190,7 +198,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  Widget _buildStatusBar(StreamProvider provider) {
+  Widget _buildStatusBar(PSStreamProvider provider) {
     final stats = provider.stats;
     final state = provider.sessionState;
 
@@ -357,7 +365,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  Widget _buildErrorOverlay(StreamProvider provider) {
+  Widget _buildErrorOverlay(PSStreamProvider provider) {
     return Container(
       color: Colors.black87,
       child: Center(
@@ -395,7 +403,7 @@ class _StreamingScreenState extends State<StreamingScreen> {
     );
   }
 
-  void _showStreamMenu(StreamProvider provider) {
+  void _showStreamMenu(PSStreamProvider provider) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(AppColors.cardColor),

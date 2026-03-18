@@ -237,13 +237,6 @@ class _PinCodeInputState extends State<PinCodeInput> {
     }
   }
 
-  void _handleBackspace(int index) {
-    if (_controllers[index].text.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-      _controllers[index - 1].clear();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(

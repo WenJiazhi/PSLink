@@ -9,21 +9,22 @@ import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/streaming_screen.dart';
-import 'screens/settings_screen.dart';
+import 'package:pslink/screens/settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'core/constants.dart';
+import 'models/ps_device.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 设置全屏和方向
+  // Configure supported orientations.
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
 
-  // 设置状态栏样式
+  // Configure system UI chrome.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -31,7 +32,7 @@ void main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  // 初始化存储服务
+  // Initialize local storage.
   final storageService = StorageService();
   await storageService.initialize();
 
@@ -50,17 +51,17 @@ class PSLinkApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // 存储服务
+        // Storage service.
         Provider<StorageService>.value(value: storageService),
 
-        // 设备管理
+        // Device state.
         ChangeNotifierProvider(
           create: (context) => DeviceProvider(storageService)..initialize(),
         ),
 
-        // 串流管理
+        // Streaming state.
         ChangeNotifierProvider(
-          create: (context) => StreamProvider(storageService)..initialize(),
+          create: (context) => PSStreamProvider(storageService)..initialize(),
         ),
       ],
       child: MaterialApp(
@@ -69,14 +70,28 @@ class PSLinkApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
         initialRoute: Routes.splash,
         routes: {
-          Routes.splash: (context) => const SplashScreen(),
+          Routes.splash: (context) => SplashScreen(
+                onInitComplete: () {
+                  Navigator.of(context).pushReplacementNamed(Routes.home);
+                },
+              ),
           Routes.home: (context) => const HomeScreen(),
-          Routes.registration: (context) => const RegistrationScreen(),
           Routes.streaming: (context) => const StreamingScreen(),
           Routes.settings: (context) => const SettingsScreen(),
           Routes.about: (context) => const AboutScreen(),
         },
-        // 路由未找到处理
+        onGenerateRoute: (settings) {
+          if (settings.name == Routes.registration) {
+            final device = settings.arguments;
+            if (device is PSDevice) {
+              return MaterialPageRoute(
+                builder: (context) => RegistrationScreen(device: device),
+              );
+            }
+          }
+          return null;
+        },
+        // Fallback for unknown routes.
         onUnknownRoute: (settings) {
           return MaterialPageRoute(
             builder: (context) => const HomeScreen(),

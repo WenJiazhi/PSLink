@@ -2,11 +2,22 @@
 class PSConstants {
   // PlayStation Remote Play 默认端口
   static const int discoveryPort = 9302;
+  static const int discoveryPortPS4 = 987;
+  static const int discoveryPortPS5 = 9302;
+  static const int discoveryClientPort = 9303;
   static const int remotePlayPort = 9295;
   static const int registrationPort = 9295;
+  static const List<int> discoveryPorts = [
+    discoveryPortPS5,
+    discoveryPortPS4,
+  ];
 
   // UDP 广播地址
   static const String broadcastAddress = '255.255.255.255';
+  static const String ddpVersion = '00030010';
+  static const String remotePlayUserAgent = 'remoteplay Windows';
+  static const String remotePlayVersionPS4 = '10.0';
+  static const String remotePlayVersionPS5 = '1.0';
 
   // 设备类型
   static const int deviceTypePS4 = 0;
@@ -34,6 +45,10 @@ class PSConstants {
 
   // 心跳间隔 (毫秒)
   static const int heartbeatInterval = 1000;
+
+  // Takion / UDP stream defaults
+  static const int defaultTakionRttMs = 1;
+  static const int defaultTakionMtu = 1454;
 
   // 控制器输入采样率 (Hz)
   static const int controllerSampleRate = 120;
