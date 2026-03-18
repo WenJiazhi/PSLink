@@ -24,24 +24,26 @@ void main() {
     test('builds the correct DDP search message', () {
       final request = service.buildSearchRequest();
 
-      expect(request, startsWith('SRCH * HTTP/1.1\n'));
+      expect(request, startsWith('SRCH * HTTP/1.1\r\n'));
       expect(
         request,
         contains(
           'device-discovery-protocol-version:${PSConstants.ddpVersion}',
         ),
       );
+      expect(request, endsWith('\r\n\r\n'));
     });
 
     test('builds the correct DDP wake message', () {
       final request = service.buildWakeRequest('123456');
 
-      expect(request, startsWith('WAKEUP * HTTP/1.1\n'));
+      expect(request, startsWith('WAKEUP * HTTP/1.1\r\n'));
       expect(request, contains('user-credential:123456'));
       expect(request, contains('client-type:vr'));
       expect(request, contains('auth-type:R'));
       expect(request, contains('model:w'));
       expect(request, contains('app-type:r'));
+      expect(request, endsWith('\r\n\r\n'));
     });
 
     test('parses a ready PS4 discovery response', () {

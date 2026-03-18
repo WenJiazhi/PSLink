@@ -356,12 +356,12 @@ class DiscoveryService {
   }
 
   String _buildDdpMessage(String type, [Map<String, String>? fields]) {
-    final buffer = StringBuffer()..write('$type * HTTP/1.1\n');
+    final buffer = StringBuffer()..write('$type * HTTP/1.1\r\n');
     fields?.forEach((key, value) {
-      buffer.write('$key:$value\n');
+      buffer.write('$key:$value\r\n');
     });
     buffer.write(
-      'device-discovery-protocol-version:${PSConstants.ddpVersion}\n',
+      'device-discovery-protocol-version:${PSConstants.ddpVersion}\r\n\r\n',
     );
     return buffer.toString();
   }

@@ -463,7 +463,7 @@ class StreamingService {
     socket.add(ascii.encode(request));
     await socket.flush();
 
-    final response = await _readHttpResponse(socket);
+    final response = await _promoteAuthenticatedSessionSocket(socket);
     if (response.statusCode != 200) {
       final reason = response.headers['rp-application-reason'];
       await socket.close();
@@ -486,31 +486,6 @@ class StreamingService {
     final decryptedServerType = _sessionCipher!.decrypt(encryptedServerType);
     final serverType = _littleEndianInt(decryptedServerType);
     _logger.d('Authenticated against server type $serverType');
-
-    _sessionReadyCompleter = Completer<void>();
-    _sessionSocket = socket;
-    socket.listen(
-      _handleSessionBytes,
-      onError: (Object error, StackTrace stackTrace) {
-        if (_state != SessionState.disconnected) {
-          _lastError = 'Session socket error: $error';
-          _logger.e(_lastError!, error: error, stackTrace: stackTrace);
-          _setState(SessionState.error);
-        }
-      },
-      onDone: () {
-        if (_state == SessionState.streaming ||
-            _state == SessionState.authenticating) {
-          _lastError = 'Session socket closed unexpectedly.';
-          _setState(SessionState.error);
-        }
-      },
-      cancelOnError: true,
-    );
-
-    if (response.remainingBody.isNotEmpty) {
-      _handleSessionBytes(response.remainingBody);
-    }
   }
 
   Future<void> _waitForSessionId() async {
@@ -1422,6 +1397,118 @@ class StreamingService {
       () async {
         if (!completer.isCompleted) {
           await subscription?.cancel();
+          completer.completeError(
+            const SessionException('Timed out waiting for the HTTP response.'),
+          );
+        }
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<_HttpResponseData> _promoteAuthenticatedSessionSocket(
+    Socket socket,
+  ) async {
+    final completer = Completer<_HttpResponseData>();
+    final buffer = <int>[];
+    Timer? timeout;
+    var responseParsed = false;
+
+    _sessionReadyCompleter = Completer<void>();
+    _sessionSocket = socket;
+
+    socket.listen(
+      (chunk) {
+        if (responseParsed) {
+          _handleSessionBytes(chunk);
+          return;
+        }
+
+        buffer.addAll(chunk);
+        final headerEndIndex = _indexOfBytes(buffer, const [13, 10, 13, 10]);
+        if (headerEndIndex < 0 || completer.isCompleted) {
+          return;
+        }
+
+        final headerBytes = Uint8List.fromList(
+          buffer.sublist(0, headerEndIndex),
+        );
+        final remainingBytes = Uint8List.fromList(
+          buffer.sublist(headerEndIndex + 4),
+        );
+        final text = ascii.decode(headerBytes, allowInvalid: true);
+        final lines = text.split(RegExp(r'\r?\n'));
+        final statusLine = lines.first;
+        final statusParts = statusLine.split(' ');
+        final statusCode = statusParts.length > 1
+            ? int.tryParse(statusParts[1]) ?? 0
+            : 0;
+        final headers = <String, String>{};
+
+        for (final line in lines.skip(1)) {
+          final separator = line.indexOf(':');
+          if (separator <= 0) {
+            continue;
+          }
+
+          final name = line.substring(0, separator).trim().toLowerCase();
+          final value = line.substring(separator + 1).trim();
+          headers[name] = value;
+        }
+
+        responseParsed = true;
+        timeout?.cancel();
+        completer.complete(
+          _HttpResponseData(
+            statusCode: statusCode,
+            statusLine: statusLine,
+            headers: headers,
+            remainingBody: remainingBytes,
+          ),
+        );
+
+        if (remainingBytes.isNotEmpty) {
+          _handleSessionBytes(remainingBytes);
+        }
+      },
+      onDone: () {
+        if (!completer.isCompleted) {
+          timeout?.cancel();
+          completer.completeError(
+            const SessionException(
+              'Socket closed before the HTTP response completed.',
+            ),
+          );
+          return;
+        }
+
+        if (_state == SessionState.streaming ||
+            _state == SessionState.authenticating) {
+          _lastError = 'Session socket closed unexpectedly.';
+          _setState(SessionState.error);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!completer.isCompleted) {
+          timeout?.cancel();
+          completer.completeError(error, stackTrace);
+          return;
+        }
+
+        if (_state != SessionState.disconnected) {
+          _lastError = 'Session socket error: $error';
+          _logger.e(_lastError!, error: error, stackTrace: stackTrace);
+          _setState(SessionState.error);
+        }
+      },
+      cancelOnError: true,
+    );
+
+    timeout = Timer(
+      Duration(milliseconds: PSConstants.connectionTimeout),
+      () {
+        if (!completer.isCompleted) {
           completer.completeError(
             const SessionException('Timed out waiting for the HTTP response.'),
           );
